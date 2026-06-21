@@ -28,7 +28,7 @@ export default function Home() {
           Enter your golf scores, support a charity you love, 
           and win monthly prizes — all in one place.
         </p>
-        <div style={{display: 'flex', gap: '16px', justifyContent: 'center'}}>
+        <div className = "hero-buttons" style={{display: 'flex', gap: '16px', justifyContent: 'center'}}>
           <a href="/signup" style={{backgroundColor: '#4ade80', color: '#000', padding: '16px 32px', borderRadius: '12px', fontWeight: 'bold', fontSize: '1.1rem', textDecoration: 'none'}}>
             Start Playing →
           </a>
@@ -43,7 +43,7 @@ export default function Home() {
         <h2 style={{textAlign: 'center', fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '60px'}}>
           How it <span style={{color: '#4ade80'}}>works</span>
         </h2>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', maxWidth: '900px', margin: '0 auto'}}>
+        <div className = "three-cols" style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '32px', maxWidth: '900px', margin: '0 auto'}}>
           <div style={{textAlign: 'center', padding: '40px', backgroundColor: '#000', borderRadius: '16px'}}>
             <div style={{fontSize: '3rem', marginBottom: '16px'}}>⛳</div>
             <h3 style={{fontSize: '1.2rem', fontWeight: 'bold', marginBottom: '12px'}}>Enter Your Scores</h3>
@@ -67,7 +67,7 @@ export default function Home() {
         <h2 style={{textAlign: 'center', fontSize: '2.5rem', fontWeight: 'bold', marginBottom: '60px'}}>
           Choose your <span style={{color: '#4ade80'}}>plan</span>
         </h2>
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px', maxWidth: '700px', margin: '0 auto'}}>
+        <div  className = "two-cols" style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '32px', maxWidth: '700px', margin: '0 auto'}}>
           <div style={{padding: '40px', backgroundColor: '#111', borderRadius: '16px', border: '1px solid #1f2937'}}>
             <h3 style={{fontSize: '1.5rem', fontWeight: 'bold', marginBottom: '8px'}}>Monthly</h3>
             <div style={{fontSize: '2.5rem', fontWeight: 'bold', color: '#4ade80', marginBottom: '24px'}}>£9.99<span style={{fontSize: '1rem', color: '#9ca3af'}}>/mo</span></div>
