@@ -1,19 +1,19 @@
 'use client'
-import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useResponsive } from '../../lib/useResponsive'
+import { useState, useEffect } from 'react'
 
 export default function Charities() {
   const [charities, setCharities] = useState([])
   const [loading, setLoading] = useState(true)
+  const { screenSize, getResponsive } = useResponsive()
 
   useEffect(() => {
     getCharities()
   }, [])
 
   const getCharities = async () => {
-    const { data, error } = await supabase
-      .from('charities')
-      .select('*')
+    const { data } = await supabase.from('charities').select('*')
     if (data) setCharities(data)
     setLoading(false)
   }
@@ -22,44 +22,44 @@ export default function Charities() {
     <main style={{minHeight: '100vh', backgroundColor: '#000', color: '#fff', fontFamily: 'sans-serif'}}>
       
       {/* NAVBAR */}
-      <nav style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 48px', borderBottom: '1px solid #1f2937'}}>
-        <a href="/" style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80', textDecoration: 'none'}}>GolfHeroes ⛳</a>
-        <div style={{display: 'flex', gap: '24px'}}>
-          <a href="/login" style={{backgroundColor: '#4ade80', color: '#000', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none'}}>Login</a>
-          <a href="/signup" style={{backgroundColor: '#fff', color: '#000', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none'}}>Sign Up</a>
+      <nav style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: getResponsive('12px 10px', '16px 16px', '20px 24px', '24px 32px', '24px 48px', '24px 48px'), borderBottom: '1px solid #1f2937', flexWrap: 'wrap', gap: getResponsive('8px', '12px', '16px', '20px', '24px', '24px')}}>
+        <a href="/" style={{fontSize: getResponsive('1rem', '1.2rem', '1.3rem', '1.4rem', '1.5rem', '1.5rem'), fontWeight: 'bold', color: '#4ade80', textDecoration: 'none'}}>GolfHeroes ⛳</a>
+        <div style={{display: 'flex', gap: getResponsive('8px', '12px', '16px', '18px', '24px', '24px')}}>
+          <a href="/login" style={{backgroundColor: '#4ade80', color: '#000', padding: getResponsive('8px 12px', '9px 14px', '10px 16px', '10px 18px', '10px 20px', '10px 20px'), borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem')}}>Login</a>
+          <a href="/signup" style={{backgroundColor: '#fff', color: '#000', padding: getResponsive('8px 12px', '9px 14px', '10px 16px', '10px 18px', '10px 20px', '10px 20px'), borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem')}}>Sign Up</a>
         </div>
       </nav>
 
-      <div style={{maxWidth: '1000px', margin: '0 auto', padding: '48px 24px'}}>
+      <div style={{maxWidth: '1000px', margin: '0 auto', padding: getResponsive('16px 10px', '24px 16px', '32px 20px', '40px 24px', '48px 24px', '48px 24px')}}>
         
-        <div style={{textAlign: 'center', marginBottom: '60px'}}>
-          <h1 style={{fontSize: '3rem', fontWeight: 'bold', marginBottom: '16px'}}>
+        <div style={{textAlign: 'center', marginBottom: getResponsive('32px', '40px', '48px', '56px', '60px', '60px')}}>
+          <h1 style={{fontSize: getResponsive('1.5rem', '1.8rem', '2.2rem', '2.6rem', '3rem', '3rem'), fontWeight: 'bold', marginBottom: getResponsive('8px', '12px', '14px', '16px', '16px', '16px')}}>
             Our <span style={{color: '#4ade80'}}>Charities</span>
           </h1>
-          <p style={{color: '#9ca3af', fontSize: '1.1rem'}}>
+          <p style={{color: '#9ca3af', fontSize: getResponsive('0.8rem', '0.9rem', '1rem', '1.05rem', '1.1rem', '1.1rem')}}>
             Every subscription supports a cause you care about
           </p>
         </div>
 
         {loading ? (
-          <p style={{textAlign: 'center', color: '#9ca3af'}}>Loading charities...</p>
+          <p style={{textAlign: 'center', color: '#9ca3af', fontSize: getResponsive('0.8rem', '0.9rem', '1rem', '1rem', '1rem', '1rem')}}>Loading charities...</p>
         ) : charities.length === 0 ? (
-          <div style={{textAlign: 'center', padding: '60px', backgroundColor: '#111', borderRadius: '16px', border: '1px solid #1f2937'}}>
-            <div style={{fontSize: '3rem', marginBottom: '16px'}}>❤️</div>
-            <h3 style={{fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '8px'}}>Charities Coming Soon!</h3>
-            <p style={{color: '#9ca3af'}}>We are adding charities to our platform. Check back soon!</p>
+          <div style={{textAlign: 'center', padding: getResponsive('32px', '40px', '48px', '56px', '60px', '60px'), backgroundColor: '#111', borderRadius: '16px', border: '1px solid #1f2937'}}>
+            <div style={{fontSize: getResponsive('2rem', '2.5rem', '3rem', '3rem', '3rem', '3rem'), marginBottom: getResponsive('8px', '12px', '14px', '16px', '16px', '16px')}}>❤️</div>
+            <h3 style={{fontSize: getResponsive('1rem', '1.1rem', '1.2rem', '1.25rem', '1.3rem', '1.3rem'), fontWeight: 'bold', marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>Charities Coming Soon!</h3>
+            <p style={{color: '#9ca3af', fontSize: getResponsive('0.75rem', '0.85rem', '0.95rem', '1rem', '1rem', '1rem')}}>We are adding charities to our platform. Check back soon!</p>
           </div>
         ) : (
-          <div style={{display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '24px'}}>
+          <div style={{display: 'grid', gridTemplateColumns: getResponsive('1fr', '1fr', '1fr', 'repeat(2, 1fr)', 'repeat(2, 1fr)', 'repeat(2, 1fr)'), gap: getResponsive('12px', '14px', '16px', '18px', '24px', '24px')}}>
             {charities.map((charity) => (
               <div key={charity.id} style={{backgroundColor: '#111', borderRadius: '16px', border: '1px solid #1f2937', overflow: 'hidden'}}>
-                <div style={{backgroundColor: '#4ade80', padding: '40px', textAlign: 'center', fontSize: '3rem'}}>
+                <div style={{backgroundColor: '#4ade80', padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'), textAlign: 'center', fontSize: getResponsive('1.8rem', '2.2rem', '2.6rem', '3rem', '3rem', '3rem')}}>
                   ❤️
                 </div>
-                <div style={{padding: '24px'}}>
-                  <h3 style={{fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '8px'}}>{charity.name}</h3>
-                  <p style={{color: '#9ca3af', marginBottom: '16px'}}>{charity.description}</p>
-                  <a href="/signup" style={{display: 'inline-block', backgroundColor: '#4ade80', color: '#000', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none'}}>
+                <div style={{padding: getResponsive('12px', '14px', '16px', '18px', '24px', '24px')}}>
+                  <h3 style={{fontSize: getResponsive('1rem', '1.1rem', '1.2rem', '1.25rem', '1.3rem', '1.3rem'), fontWeight: 'bold', marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>{charity.name}</h3>
+                  <p style={{color: '#9ca3af', marginBottom: getResponsive('8px', '10px', '12px', '14px', '16px', '16px'), fontSize: getResponsive('0.75rem', '0.85rem', '0.9rem', '0.95rem', '1rem', '1rem')}}>{charity.description}</p>
+                  <a href="/signup" style={{display: 'inline-block', backgroundColor: '#4ade80', color: '#000', padding: getResponsive('6px 12px', '8px 14px', '9px 16px', '10px 18px', '10px 20px', '10px 20px'), borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.9rem', '0.9rem')}}>
                     Support This Charity →
                   </a>
                 </div>
@@ -70,9 +70,9 @@ export default function Charities() {
       </div>
 
       {/* FOOTER */}
-      <footer style={{padding: '40px', borderTop: '1px solid #1f2937', textAlign: 'center', color: '#9ca3af', marginTop: '60px'}}>
-        <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80', marginBottom: '16px'}}>GolfHeroes ⛳</div>
-        <p>© 2026 GolfHeroes. Built for Digital Heroes.</p>
+      <footer style={{padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'), borderTop: '1px solid #1f2937', textAlign: 'center', color: '#9ca3af', marginTop: getResponsive('32px', '40px', '48px', '56px', '60px', '60px')}}>
+        <div style={{fontSize: getResponsive('1.2rem', '1.3rem', '1.4rem', '1.5rem', '1.5rem', '1.5rem'), fontWeight: 'bold', color: '#4ade80', marginBottom: getResponsive('8px', '12px', '14px', '16px', '16px', '16px')}}>GolfHeroes ⛳</div>
+        <p style={{fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem')}}>© 2026 GolfHeroes. Built for Digital Heroes.</p>
       </footer>
 
     </main>

@@ -1,6 +1,7 @@
 'use client'
 import { useState, useEffect } from 'react'
 import { supabase } from '../../lib/supabase'
+import { useResponsive } from '../../lib/useResponsive'
 
 export default function Dashboard() {
   const [user, setUser] = useState(null)
@@ -9,6 +10,7 @@ export default function Dashboard() {
   const [newDate, setNewDate] = useState('')
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const { getResponsive } = useResponsive()
 
   useEffect(() => {
     getUser()
@@ -26,7 +28,7 @@ export default function Dashboard() {
   }
 
   const getScores = async (userId) => {
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('scores')
       .select('*')
       .eq('user_id', userId)
@@ -78,47 +80,47 @@ export default function Dashboard() {
     <main style={{minHeight: '100vh', backgroundColor: '#000', color: '#fff', fontFamily: 'sans-serif'}}>
       
       {/* NAVBAR */}
-      <nav style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '24px 48px', borderBottom: '1px solid #1f2937'}}>
-        <div style={{fontSize: '1.5rem', fontWeight: 'bold', color: '#4ade80'}}>GolfHeroes ⛳</div>
-        <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
-          <span style={{color: '#9ca3af'}}>Welcome, {user?.email}</span>
-          <button onClick={handleLogout} style={{backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: '10px 20px', borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer'}}>
+      <nav style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: getResponsive('12px 16px', '14px 20px', '16px 24px', '18px 32px', '24px 48px', '24px 48px'), borderBottom: '1px solid #1f2937', gap: getResponsive('8px', '10px', '12px', '16px', '16px', '16px'), flexWrap: 'wrap'}}>
+        <div style={{fontSize: getResponsive('1.2rem', '1.3rem', '1.4rem', '1.5rem', '1.5rem', '1.5rem'), fontWeight: 'bold', color: '#4ade80'}}>GolfHeroes ⛳</div>
+        <div style={{display: 'flex', alignItems: 'center', gap: getResponsive('8px', '10px', '12px', '14px', '16px', '16px'), flexWrap: 'wrap'}}>
+          <span style={{color: '#9ca3af', fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem')}} title={user?.email}>Welcome, {user?.email?.split('@')[0]}</span>
+          <button onClick={handleLogout} style={{backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: getResponsive('8px 12px', '9px 14px', '10px 16px', '10px 18px', '10px 20px', '10px 20px'), borderRadius: '8px', fontWeight: 'bold', cursor: 'pointer', fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem')}}>
             Logout
           </button>
         </div>
       </nav>
 
-      <div style={{maxWidth: '1000px', margin: '0 auto', padding: '48px 24px'}}>
+      <div style={{maxWidth: '1000px', margin: '0 auto', padding: getResponsive('24px 12px', '32px 14px', '40px 18px', '48px 24px', '48px 24px', '48px 24px')}}>
         
         {/* WELCOME */}
-        <div style={{marginBottom: '40px'}}>
-          <h1 style={{fontSize: '2rem', fontWeight: 'bold'}}>Your Dashboard 🏌️</h1>
-          <p style={{color: '#9ca3af', marginTop: '8px'}}>Track your scores and manage your account</p>
+        <div style={{marginBottom: getResponsive('24px', '28px', '32px', '36px', '40px', '40px')}}>
+          <h1 style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.7rem', '1.8rem', '2rem', '2rem'), fontWeight: 'bold'}}>Your Dashboard 🏌️</h1>
+          <p style={{color: '#9ca3af', marginTop: getResponsive('4px', '6px', '8px', '8px', '8px', '8px'), fontSize: getResponsive('0.85rem', '0.9rem', '0.95rem', '1rem', '1rem', '1rem')}}>Track your scores and manage your account</p>
         </div>
 
         {/* STATS */}
-        <div style={{display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: '24px', marginBottom: '40px'}}>
-          <div style={{backgroundColor: '#111', padding: '24px', borderRadius: '16px', border: '1px solid #1f2937'}}>
-            <p style={{color: '#9ca3af', fontSize: '0.85rem', marginBottom: '8px'}}>TOTAL SCORES</p>
-            <p style={{fontSize: '2rem', fontWeight: 'bold', color: '#4ade80'}}>{scores.length}</p>
+        <div style={{display: 'grid', gridTemplateColumns: getResponsive('1fr', '1fr', '1fr', '1fr', 'repeat(3, 1fr)', 'repeat(3, 1fr)'), gap: getResponsive('12px', '14px', '16px', '20px', '24px', '24px'), marginBottom: getResponsive('24px', '28px', '32px', '36px', '40px', '40px')}}>
+          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+            <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>TOTAL SCORES</p>
+            <p style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.8rem', '1.9rem', '2rem', '2rem'), fontWeight: 'bold', color: '#4ade80'}}>{scores.length}</p>
           </div>
-          <div style={{backgroundColor: '#111', padding: '24px', borderRadius: '16px', border: '1px solid #1f2937'}}>
-            <p style={{color: '#9ca3af', fontSize: '0.85rem', marginBottom: '8px'}}>BEST SCORE</p>
-            <p style={{fontSize: '2rem', fontWeight: 'bold', color: '#4ade80'}}>{scores.length > 0 ? Math.max(...scores.map(s => s.score)) : '-'}</p>
+          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+            <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>BEST SCORE</p>
+            <p style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.8rem', '1.9rem', '2rem', '2rem'), fontWeight: 'bold', color: '#4ade80'}}>{scores.length > 0 ? Math.max(...scores.map(s => s.score)) : '-'}</p>
           </div>
-          <div style={{backgroundColor: '#111', padding: '24px', borderRadius: '16px', border: '1px solid #1f2937'}}>
-            <p style={{color: '#9ca3af', fontSize: '0.85rem', marginBottom: '8px'}}>SUBSCRIPTION</p>
-            <p style={{fontSize: '1.2rem', fontWeight: 'bold', color: '#f59e0b'}}>Inactive</p>
+          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+            <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>SUBSCRIPTION</p>
+            <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#f59e0b'}}>Inactive</p>
           </div>
         </div>
 
         {/* ADD SCORE */}
-        <div style={{backgroundColor: '#111', padding: '32px', borderRadius: '16px', border: '1px solid #1f2937', marginBottom: '32px'}}>
-          <h2 style={{fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '24px'}}>Add Golf Score ⛳</h2>
+        <div style={{backgroundColor: '#111', padding: getResponsive('18px', '20px', '24px', '28px', '32px', '32px'), borderRadius: '16px', border: '1px solid #1f2937', marginBottom: getResponsive('20px', '24px', '28px', '32px', '32px', '32px')}}>
+          <h2 style={{fontSize: getResponsive('1.1rem', '1.15rem', '1.2rem', '1.25rem', '1.3rem', '1.3rem'), fontWeight: 'bold', marginBottom: getResponsive('14px', '16px', '18px', '20px', '24px', '24px')}}>Add Golf Score ⛳</h2>
           
-          <div style={{display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '16px', marginBottom: '16px'}}>
+          <div style={{display: 'grid', gridTemplateColumns: getResponsive('1fr', '1fr', '1fr', '1fr 1fr', '1fr 1fr', '1fr 1fr'), gap: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px')}}>
             <div>
-              <label style={{display: 'block', marginBottom: '6px', color: '#9ca3af', fontSize: '0.85rem'}}>Score (1-45)</label>
+              <label style={{display: 'block', marginBottom: getResponsive('4px', '5px', '6px', '6px', '6px', '6px'), color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>Score (1-45)</label>
               <input
                 type="number"
                 min="1"
@@ -126,54 +128,54 @@ export default function Dashboard() {
                 placeholder="e.g. 32"
                 value={newScore}
                 onChange={(e) => setNewScore(e.target.value)}
-                style={{width: '100%', padding: '12px', backgroundColor: '#000', border: '1px solid #1f2937', borderRadius: '8px', color: '#fff', fontSize: '1rem', boxSizing: 'border-box'}}
+                style={{width: '100%', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), backgroundColor: '#000', border: '1px solid #1f2937', borderRadius: '8px', color: '#fff', fontSize: getResponsive('0.85rem', '0.9rem', '0.95rem', '1rem', '1rem', '1rem'), boxSizing: 'border-box'}}
               />
             </div>
             <div>
-              <label style={{display: 'block', marginBottom: '6px', color: '#9ca3af', fontSize: '0.85rem'}}>Date</label>
+              <label style={{display: 'block', marginBottom: getResponsive('4px', '5px', '6px', '6px', '6px', '6px'), color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>Date</label>
               <input
                 type="date"
                 value={newDate}
                 onChange={(e) => setNewDate(e.target.value)}
-                style={{width: '100%', padding: '12px', backgroundColor: '#000', border: '1px solid #1f2937', borderRadius: '8px', color: '#fff', fontSize: '1rem', boxSizing: 'border-box'}}
+                style={{width: '100%', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), backgroundColor: '#000', border: '1px solid #1f2937', borderRadius: '8px', color: '#fff', fontSize: getResponsive('0.85rem', '0.9rem', '0.95rem', '1rem', '1rem', '1rem'), boxSizing: 'border-box'}}
               />
             </div>
           </div>
 
           {message && (
-            <div style={{backgroundColor: '#1f2937', padding: '12px', borderRadius: '8px', marginBottom: '16px', color: '#4ade80', fontSize: '0.85rem'}}>
+            <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
               {message}
             </div>
           )}
 
           <button
             onClick={addScore}
-            style={{backgroundColor: '#4ade80', color: '#000', border: 'none', padding: '14px 32px', borderRadius: '10px', fontWeight: 'bold', fontSize: '1rem', cursor: 'pointer'}}
+            style={{backgroundColor: '#4ade80', color: '#000', border: 'none', padding: getResponsive('10px 16px', '11px 18px', '12px 20px', '13px 24px', '14px 32px', '14px 32px'), borderRadius: '10px', fontWeight: 'bold', fontSize: getResponsive('0.85rem', '0.9rem', '0.95rem', '1rem', '1rem', '1rem'), cursor: 'pointer'}}
           >
             Add Score →
           </button>
         </div>
 
         {/* SCORES LIST */}
-        <div style={{backgroundColor: '#111', padding: '32px', borderRadius: '16px', border: '1px solid #1f2937'}}>
-          <h2 style={{fontSize: '1.3rem', fontWeight: 'bold', marginBottom: '24px'}}>Your Last 5 Scores 📊</h2>
+        <div style={{backgroundColor: '#111', padding: getResponsive('18px', '20px', '24px', '28px', '32px', '32px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+          <h2 style={{fontSize: getResponsive('1.1rem', '1.15rem', '1.2rem', '1.25rem', '1.3rem', '1.3rem'), fontWeight: 'bold', marginBottom: getResponsive('14px', '16px', '18px', '20px', '24px', '24px')}}>Your Last 5 Scores 📊</h2>
           
           {scores.length === 0 ? (
-            <p style={{color: '#9ca3af', textAlign: 'center', padding: '40px'}}>No scores yet — add your first score above!</p>
+            <p style={{color: '#9ca3af', textAlign: 'center', padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'), fontSize: getResponsive('0.85rem', '0.9rem', '0.95rem', '1rem', '1rem', '1rem')}}>No scores yet — add your first score above!</p>
           ) : (
             <div>
               {scores.map((score, index) => (
-                <div key={score.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '16px', backgroundColor: '#000', borderRadius: '10px', marginBottom: '12px'}}>
-                  <div style={{display: 'flex', alignItems: 'center', gap: '16px'}}>
-                    <div style={{backgroundColor: '#4ade80', color: '#000', width: '36px', height: '36px', borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold'}}>
+                <div key={score.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), backgroundColor: '#000', borderRadius: '10px', marginBottom: getResponsive('8px', '10px', '12px', '12px', '12px', '12px'), flexWrap: 'wrap', gap: getResponsive('8px', '10px', '12px', '12px', '16px', '16px')}}>
+                  <div style={{display: 'flex', alignItems: 'center', gap: getResponsive('10px', '12px', '14px', '16px', '16px', '16px')}}>
+                    <div style={{backgroundColor: '#4ade80', color: '#000', width: getResponsive('28px', '30px', '32px', '34px', '36px', '36px'), height: getResponsive('28px', '30px', '32px', '34px', '36px', '36px'), borderRadius: '50%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontWeight: 'bold', fontSize: getResponsive('0.8rem', '0.85rem', '0.9rem', '0.95rem', '1rem', '1rem')}}>
                       {index + 1}
                     </div>
                     <div>
-                      <p style={{fontWeight: 'bold', fontSize: '1.1rem'}}>{score.score} points</p>
-                      <p style={{color: '#9ca3af', fontSize: '0.85rem'}}>{new Date(score.date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})}</p>
+                      <p style={{fontWeight: 'bold', fontSize: getResponsive('0.9rem', '0.95rem', '1rem', '1.05rem', '1.1rem', '1.1rem')}}>{score.score} points</p>
+                      <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>{new Date(score.date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})}</p>
                     </div>
                   </div>
-                  <div style={{color: '#4ade80', fontWeight: 'bold', fontSize: '1.5rem'}}>
+                  <div style={{color: '#4ade80', fontWeight: 'bold', fontSize: getResponsive('1.2rem', '1.3rem', '1.4rem', '1.5rem', '1.5rem', '1.5rem')}}>
                     ⛳
                   </div>
                 </div>
