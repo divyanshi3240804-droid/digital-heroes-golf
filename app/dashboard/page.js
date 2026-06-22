@@ -49,17 +49,52 @@ const [proofFile, setProofFile] = useState(null)
 const getProfile = async (userId) => {
   const { data, error } = await supabase
     .from('profiles')
-    .select(`
-      *,
-      charities (
-        name
-      )
-    `)
+    .select('*')
     .eq('id', userId)
     .single()
 
   if (!error && data) {
+    console.log(data)
     setProfile(data)
+  }
+}
+
+const subscribePlan = async (plan) => {
+  const endDate = new Date()
+
+  if (plan === 'monthly') {
+    endDate.setMonth(endDate.getMonth() + 1)
+  }
+
+  if (plan === 'yearly') {
+    endDate.setFullYear(endDate.getFullYear() + 1)
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      subscription_status: 'active',
+      subscription_plan: plan,
+      subscription_end_date: endDate.toISOString()
+    })
+    .eq('id', user.id)
+
+  if (error) {
+    setMessage(error.message)
+  } else {
+    setMessage(`${plan} subscription activated successfully!`)
+
+setTimeout(() => {
+  setMessage('')
+}, 3000)
+setProfile({
+  ...profile,
+  subscription_status: 'active',
+  subscription_plan: plan,
+  subscription_end_date: endDate.toISOString()
+})
+
+getProfile(user.id)
   }
 }
 const getDraws = async () => {
@@ -255,7 +290,19 @@ const uploadWinnerProof = async () => {
           <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
             <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>SUBSCRIPTION</p>
             <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#f59e0b'}}>
-  {profile?.subscription_status || 'Inactive'}
+  {profile?.subscription_status
+  ? profile.subscription_status.charAt(0).toUpperCase() + profile.subscription_status.slice(1)
+  : 'Inactive'}
+</p>
+
+<p style={{
+  fontSize: '0.8rem',
+  color: '#9ca3af',
+  marginTop: '4px'
+}}>
+  {profile?.subscription_end_date
+    ? `Renews: ${new Date(profile.subscription_end_date).toLocaleDateString()}`
+    : ''}
 </p>
 <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
   <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: '8px'}}>SELECTED CHARITY</p>
@@ -282,6 +329,9 @@ const uploadWinnerProof = async () => {
   <p style={{color: '#9ca3af', fontSize: '0.85rem', marginTop: '6px'}}>
     Scores Submitted: {scores.length}
   </p>
+  <p style={{color: '#9ca3af', fontSize: '0.85rem', marginTop: '6px'}}>
+  Upcoming Draw: 1st of next month
+</p>
 </div>
 
 <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
@@ -329,6 +379,38 @@ const uploadWinnerProof = async () => {
     </button>
   </div>
 )}
+{profile?.subscription_status !== 'active' && (
+  <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937', marginBottom:'24px'}}>
+    <h2 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'8px'}}>
+      Choose Your Subscription
+    </h2>
+
+    <p style={{color:'#9ca3af', marginBottom:'16px'}}>
+      Activate your account to enter monthly draws.
+    </p>
+
+    <div style={{display:'flex', gap:'12px', flexWrap:'wrap'}}>
+      <button
+        onClick={() => subscribePlan('monthly')}
+        style={{backgroundColor:'#4ade80', color:'#000', border:'none', padding:'12px 18px', borderRadius:'10px', fontWeight:'bold', cursor:'pointer'}}
+      >
+        Monthly Plan
+      </button>
+
+      <button
+        onClick={() => subscribePlan('yearly')}
+        style={{backgroundColor:'#3b82f6', color:'#fff', border:'none', padding:'12px 18px', borderRadius:'10px', fontWeight:'bold', cursor:'pointer'}}
+      >
+        Yearly Plan
+      </button>
+    </div>
+  </div>
+)}
+      {message && (
+  <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
+    {message}
+  </div>
+)}
         {/* ADD SCORE */}
         <div style={{backgroundColor: '#111', padding: getResponsive('18px', '20px', '24px', '28px', '32px', '32px'), borderRadius: '16px', border: '1px solid #1f2937', marginBottom: getResponsive('20px', '24px', '28px', '32px', '32px', '32px')}}>
           <h2 style={{fontSize: getResponsive('1.1rem', '1.15rem', '1.2rem', '1.25rem', '1.3rem', '1.3rem'), fontWeight: 'bold', marginBottom: getResponsive('14px', '16px', '18px', '20px', '24px', '24px')}}>Add Golf Score ⛳</h2>
@@ -357,11 +439,7 @@ const uploadWinnerProof = async () => {
             </div>
           </div>
 
-          {message && (
-            <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
-              {message}
-            </div>
-          )}
+          
 
           <button
             onClick={addScore}

@@ -13,6 +13,10 @@ export default function Admin() {
   const [newCharity, setNewCharity] = useState({ name: '', description: '' })
   const [drawResult, setDrawResult] = useState(null)
   const [simulatedNumbers, setSimulatedNumbers] = useState([])
+  const [prizePool, setPrizePool] = useState(0)
+  const [editingCharity, setEditingCharity] = useState(null)
+const [editCharityName, setEditCharityName] = useState('')
+const [charityTotal, setCharityTotal] = useState(0)
   const [message, setMessage] = useState('')
   const [screenSize, setScreenSize] = useState('desktop')
 
@@ -43,6 +47,14 @@ export default function Admin() {
     if (scoresData) setScores(scoresData)
     if (charitiesData) setCharities(charitiesData)
     if (drawsData) setDraws(drawsData)
+      if (usersData) {
+  const activeUsers = usersData.filter(
+    u => u.subscription_status === 'active'
+  )
+
+  setPrizePool(activeUsers.length * 10)
+  setCharityTotal(activeUsers.length * 1)
+}
       if (winnersData) setWinners(winnersData)
     setLoading(false)
   }
@@ -74,6 +86,23 @@ export default function Admin() {
       fetchAll()
     }
   }
+  const updateCharity = async () => {
+  const { error } = await supabase
+    .from('charities')
+    .update({
+      name: editCharityName
+    })
+    .eq('id', editingCharity)
+
+  if (error) {
+    setMessage(error.message)
+  } else {
+    setMessage('Charity updated successfully!')
+    setEditingCharity(null)
+    setEditCharityName('')
+    fetchAll()
+  }
+}
 
   const runDraw = async () => {
     // Generate 5 random numbers between 1-45
@@ -101,7 +130,41 @@ export default function Admin() {
       fetchAll()
     }
   }
-  
+  const publishDraw = async (drawId) => {
+  const { error } = await supabase
+    .from('draws')
+    .update({ status: 'published' })
+    .eq('id', drawId)
+
+  if (error) {
+    setMessage(error.message)
+  } else {
+    setMessage('Draw results published successfully!')
+    fetchAll()
+  }
+}
+
+ const updateSubscription = async (userId, status, plan = null) => {
+  const updateData = {
+    subscription_status: status
+  }
+
+  if (plan) {
+    updateData.subscription_plan = plan
+  }
+
+  const { error } = await supabase
+    .from('profiles')
+    .update(updateData)
+    .eq('id', userId)
+
+  if (error) {
+    setMessage(error.message)
+  } else {
+    setMessage('Subscription updated successfully!')
+    fetchAll()
+  }
+}
 const simulateDraw = () => {
   const numbers = []
 
@@ -188,6 +251,19 @@ const simulateDraw = () => {
             <p style={{fontSize: getResponsive('1.5rem', '2rem', '2.5rem'), fontWeight: 'bold', color: '#4ade80'}}>{draws.length}</p>
           </div>
         </div>
+        <div style={{backgroundColor:'#111', padding:getResponsive('16px','20px','24px'), borderRadius:'16px', border:'1px solid #1f2937', textAlign:'center'}}>
+  <p style={{color:'#9ca3af', fontSize:getResponsive('0.7rem','0.75rem','0.8rem'), marginBottom:'8px'}}>PRIZE POOL</p>
+  <p style={{fontSize:getResponsive('1.5rem','2rem','2.5rem'), fontWeight:'bold', color:'#4ade80'}}>
+    £{prizePool}
+  </p>
+</div>
+
+<div style={{backgroundColor:'#111', padding:getResponsive('16px','20px','24px'), borderRadius:'16px', border:'1px solid #1f2937', textAlign:'center'}}>
+  <p style={{color:'#9ca3af', fontSize:getResponsive('0.7rem','0.75rem','0.8rem'), marginBottom:'8px'}}>CHARITY TOTAL</p>
+  <p style={{fontSize:getResponsive('1.5rem','2rem','2.5rem'), fontWeight:'bold', color:'#4ade80'}}>
+    £{charityTotal}
+  </p>
+</div>
 
         {/* TABS */}
         <div style={{display: 'flex', gap: getResponsive('8px', '10px', '12px'), marginBottom: getResponsive('24px', '28px', '32px'), flexWrap: 'wrap'}}>
@@ -219,11 +295,38 @@ const simulateDraw = () => {
                     <p style={{fontWeight: 'bold', fontSize: getResponsive('0.85rem', '0.95rem', '1rem')}}>{user.full_name || 'No name'}</p>
                     <p style={{color: '#9ca3af', fontSize: getResponsive('0.65rem', '0.7rem', '0.75rem')}}>{user.email}</p>
                   </div>
-                  <div style={{textAlign: 'right', marginLeft: 'auto'}}>
-                    <span style={{backgroundColor: user.subscription_status === 'active' ? '#4ade80' : '#1f2937', color: user.subscription_status === 'active' ? '#000' : '#9ca3af', padding: getResponsive('3px 10px', '3px 11px', '4px 12px'), borderRadius: '20px', fontSize: getResponsive('0.65rem', '0.7rem', '0.75rem'), fontWeight: 'bold'}}>
-                      {user.subscription_status || 'inactive'}
-                    </span>
-                  </div>
+                 <div style={{textAlign: 'right', marginLeft: 'auto'}}>
+  <span
+    style={{
+      backgroundColor: user.subscription_status === 'active' ? '#4ade80' : '#1f2937',
+      color: user.subscription_status === 'active' ? '#000' : '#9ca3af',
+      padding: getResponsive('3px 10px', '3px 11px', '4px 12px'),
+      borderRadius: '20px',
+      fontSize: getResponsive('0.65rem', '0.7rem', '0.75rem'),
+      fontWeight: 'bold'
+    }}
+  >
+    {user.subscription_status || 'inactive'}
+  </span>
+
+  <div style={{display:'flex', gap:'4px', flexWrap:'wrap', marginTop:'8px', justifyContent:'flex-end'}}>
+    <button onClick={() => updateSubscription(user.id, 'active')}>
+      Active
+    </button>
+
+    <button onClick={() => updateSubscription(user.id, 'inactive')}>
+      Inactive
+    </button>
+
+    <button onClick={() => updateSubscription(user.id, 'active', 'monthly')}>
+      Monthly
+    </button>
+
+    <button onClick={() => updateSubscription(user.id, 'active', 'yearly')}>
+      Yearly
+    </button>
+  </div>
+</div>
                 </div>
               ))
             )}
@@ -269,13 +372,43 @@ const simulateDraw = () => {
               {charities.map((charity) => (
                 <div key={charity.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: screenSize === 'mobile' ? 'flex-start' : 'center', padding: getResponsive('12px 16px', '14px 20px', '16px 24px'), borderBottom: '1px solid #1f2937', flexWrap: screenSize === 'mobile' ? 'wrap' : 'nowrap', gap: getResponsive('8px', '10px', '12px')}}>
                   <div style={{flex: 1}}>
-                    <p style={{fontWeight: 'bold', fontSize: getResponsive('0.85rem', '0.95rem', '1rem')}}>{charity.name}</p>
-                    <p style={{color: '#9ca3af', fontSize: getResponsive('0.65rem', '0.7rem', '0.75rem')}}>{charity.description}</p>
+                    {editingCharity === charity.id ? (
+  <input
+    type="text"
+    value={editCharityName}
+    onChange={(e) => setEditCharityName(e.target.value)}
+    style={{
+      padding:'8px',
+      backgroundColor:'#000',
+      color:'#fff',
+      border:'1px solid #1f2937',
+      borderRadius:'8px'
+    }}
+  />
+) : (
+  <>
+    <p style={{fontWeight:'bold'}}>{charity.name}</p>
+    <p style={{color:'#9ca3af'}}>{charity.description}</p>
+  </>
+)}
                   </div>
                   <button onClick={() => deleteCharity(charity.id)} style={{backgroundColor: '#ef4444', color: '#fff', border: 'none', padding: getResponsive('6px 12px', '7px 14px', '8px 16px'), borderRadius: '8px', cursor: 'pointer', fontWeight: 'bold', whiteSpace: 'nowrap', fontSize: getResponsive('0.65rem', '0.75rem', '0.85rem')}}>
                     Delete
                   </button>
+                  {editingCharity === charity.id ? (
+  <button onClick={updateCharity}>Save</button>
+) : (
+  <button
+    onClick={() => {
+      setEditingCharity(charity.id)
+      setEditCharityName(charity.name)
+    }}
+  >
+    Edit
+  </button>
+)}
                 </div>
+
               ))}
             </div>
           </div>
@@ -378,6 +511,22 @@ const simulateDraw = () => {
                       </div>
                       <span style={{backgroundColor: '#1f2937', color: '#4ade80', padding: getResponsive('3px 10px', '3px 11px', '4px 12px'), borderRadius: '20px', fontSize: getResponsive('0.65rem', '0.7rem', '0.75rem'), fontWeight: 'bold', whiteSpace: 'nowrap'}}>
                         {draw.status}
+                        <button
+  onClick={() => publishDraw(draw.id)}
+  style={{
+    backgroundColor:'#4ade80',
+    color:'#000',
+    border:'none',
+    padding:'6px 10px',
+    borderRadius:'8px',
+    fontWeight:'bold',
+    cursor:'pointer',
+    marginTop:'8px',
+    marginLeft: '10px',
+  }}
+>
+  Publish
+</button>
                       </span>
                     </div>
                   </div>
