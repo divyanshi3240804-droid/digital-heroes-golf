@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 export default function Charities() {
   const [charities, setCharities] = useState([])
   const [loading, setLoading] = useState(true)
+  const [searchTerm, setSearchTerm] = useState('')
   const { screenSize, getResponsive } = useResponsive()
 
   useEffect(() => {
@@ -17,7 +18,9 @@ export default function Charities() {
     if (data) setCharities(data)
     setLoading(false)
   }
-
+const filteredCharities = charities.filter((charity) =>
+  charity.name.toLowerCase().includes(searchTerm.toLowerCase())
+)
   return (
     <main style={{minHeight: '100vh', backgroundColor: '#000', color: '#fff', fontFamily: 'sans-serif'}}>
       
@@ -40,6 +43,21 @@ export default function Charities() {
             Every subscription supports a cause you care about
           </p>
         </div>
+        <input
+  type="text"
+  placeholder="Search charities..."
+  value={searchTerm}
+  onChange={(e) => setSearchTerm(e.target.value)}
+  style={{
+    width: '100%',
+    padding: '12px',
+    marginBottom: '20px',
+    borderRadius: '10px',
+    border: '1px solid #1f2937',
+    backgroundColor: '#111',
+    color: '#fff'
+  }}
+/>
 
         {loading ? (
           <p style={{textAlign: 'center', color: '#9ca3af', fontSize: getResponsive('0.8rem', '0.9rem', '1rem', '1rem', '1rem', '1rem')}}>Loading charities...</p>
@@ -51,20 +69,58 @@ export default function Charities() {
           </div>
         ) : (
           <div style={{display: 'grid', gridTemplateColumns: getResponsive('1fr', '1fr', '1fr', 'repeat(2, 1fr)', 'repeat(2, 1fr)', 'repeat(2, 1fr)'), gap: getResponsive('12px', '14px', '16px', '18px', '24px', '24px')}}>
-            {charities.map((charity) => (
-              <div key={charity.id} style={{backgroundColor: '#111', borderRadius: '16px', border: '1px solid #1f2937', overflow: 'hidden'}}>
-                <div style={{backgroundColor: '#4ade80', padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'), textAlign: 'center', fontSize: getResponsive('1.8rem', '2.2rem', '2.6rem', '3rem', '3rem', '3rem')}}>
-                  ❤️
-                </div>
-                <div style={{padding: getResponsive('12px', '14px', '16px', '18px', '24px', '24px')}}>
-                  <h3 style={{fontSize: getResponsive('1rem', '1.1rem', '1.2rem', '1.25rem', '1.3rem', '1.3rem'), fontWeight: 'bold', marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>{charity.name}</h3>
-                  <p style={{color: '#9ca3af', marginBottom: getResponsive('8px', '10px', '12px', '14px', '16px', '16px'), fontSize: getResponsive('0.75rem', '0.85rem', '0.9rem', '0.95rem', '1rem', '1rem')}}>{charity.description}</p>
-                  <a href="/signup" style={{display: 'inline-block', backgroundColor: '#4ade80', color: '#000', padding: getResponsive('6px 12px', '8px 14px', '9px 16px', '10px 18px', '10px 20px', '10px 20px'), borderRadius: '8px', fontWeight: 'bold', textDecoration: 'none', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.9rem', '0.9rem')}}>
-                    Support This Charity →
-                  </a>
-                </div>
-              </div>
-            ))}
+         
+ {filteredCharities.map((charity) => (
+  <div
+    key={charity.id}
+    style={{
+      backgroundColor: '#111',
+      borderRadius: '16px',
+      border: '1px solid #1f2937',
+      overflow: 'hidden'
+    }}
+  >
+    <a
+      href={`/charities/${charity.id}`}
+      style={{
+        textDecoration: 'none',
+        color: 'inherit'
+      }}
+    >
+      <div style={{
+        backgroundColor: '#4ade80',
+        padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'),
+        textAlign: 'center',
+        fontSize: getResponsive('1.8rem', '2.2rem', '2.6rem', '3rem', '3rem', '3rem')
+      }}>
+        ❤️
+      </div>
+
+      <div style={{padding: getResponsive('12px', '14px', '16px', '18px', '24px', '24px')}}>
+        <h3>{charity.name}</h3>
+        <p>{charity.description}</p>
+      </div>
+    </a>
+
+    <div style={{padding:'0 24px 24px'}}>
+      <a href="/signup">
+        Support This Charity →
+      </a>
+
+      <a
+        href="/donate"
+        style={{
+          display:'block',
+          marginTop:'10px',
+          color:'#4ade80',
+          textDecoration:'none'
+        }}
+      >
+        Donate Directly →
+      </a>
+    </div>
+  </div>
+))}
           </div>
         )}
       </div>
@@ -75,6 +131,6 @@ export default function Charities() {
         <p style={{fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem')}}>© 2026 GolfHeroes. Built for Digital Heroes.</p>
       </footer>
 
-    </main>
-  )
-}
+        </main>
+    )
+    }

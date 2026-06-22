@@ -16,13 +16,26 @@ const [editDate, setEditDate] = useState('')
 const [draws, setDraws] = useState([])
 const [winnings, setWinnings] = useState([])
 const [proofFile, setProofFile] = useState(null)
+
   const [profile, setProfile] = useState(null)
   const { getResponsive } = useResponsive()
 
-  useEffect(() => {
-    getUser()
-  }, [])
+useEffect(() => {
+  getUser()
+}, [])
 
+useEffect(() => {
+  const params = new URLSearchParams(window.location.search)
+
+  const success = params.get('success')
+  const plan = params.get('plan')
+
+  if (success === 'true' && plan) {
+    setTimeout(() => {
+      subscribeManualAfterStripe(plan)
+    }, 1000)
+  }
+}, [])
   const getUser = async () => {
     const { data: { user } } = await supabase.auth.getUser()
     if (!user) {
@@ -36,7 +49,35 @@ const [proofFile, setProofFile] = useState(null)
     }
     setLoading(false)
   }
+  
 
+
+const subscribeManualAfterStripe = async (plan) => {
+  const { data: { user } } = await supabase.auth.getUser()
+  if (!user) return
+
+  const endDate = new Date()
+
+  if (plan === 'monthly') {
+    endDate.setMonth(endDate.getMonth() + 1)
+  }
+
+  if (plan === 'yearly') {
+    endDate.setFullYear(endDate.getFullYear() + 1)
+  }
+
+  await supabase
+    .from('profiles')
+    .update({
+      subscription_status: 'active',
+      subscription_plan: plan,
+      subscription_end_date: endDate.toISOString()
+    })
+    .eq('id', user.id)
+
+  window.history.replaceState({}, '', '/dashboard')
+  getProfile(user.id)
+}
   const getScores = async (userId) => {
     const { data } = await supabase
       .from('scores')
@@ -60,43 +101,36 @@ const getProfile = async (userId) => {
 }
 
 const subscribePlan = async (plan) => {
-  const endDate = new Date()
+  try {
+    setMessage('Redirecting to payment...')
 
-  if (plan === 'monthly') {
-    endDate.setMonth(endDate.getMonth() + 1)
-  }
-
-  if (plan === 'yearly') {
-    endDate.setFullYear(endDate.getFullYear() + 1)
-  }
-
-  const { error } = await supabase
-    .from('profiles')
-    .update({
-      subscription_status: 'active',
-      subscription_plan: plan,
-      subscription_end_date: endDate.toISOString()
+    const response = await fetch('/api/create-checkout-session', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        plan,
+        userId: user.id,
+        email: user.email
+      })
     })
-    .eq('id', user.id)
 
-  if (error) {
+    const data = await response.json()
+
+    if (data.error) {
+      setMessage(data.error)
+      return
+    }
+
+    window.location.href = data.url
+  } catch (error) {
     setMessage(error.message)
-  } else {
-    setMessage(`${plan} subscription activated successfully!`)
-
-setTimeout(() => {
-  setMessage('')
-}, 3000)
-setProfile({
-  ...profile,
-  subscription_status: 'active',
-  subscription_plan: plan,
-  subscription_end_date: endDate.toISOString()
-})
-
-getProfile(user.id)
   }
 }
+
+
+
 const getDraws = async () => {
   const { data } = await supabase
     .from('draws')
@@ -209,13 +243,11 @@ const uploadWinnerProof = async () => {
   }
 
   const winnerId = winnings[0].id
-  const filePath = `${user.id}/${winnerId}-${proofFile.name}`
-
+  const safeFileName = proofFile.name.replace(/[^a-zA-Z0-9.]/g, '-')
+const filePath = `${user.id}/${winnerId}-${Date.now()}-${safeFileName}`
   const { error: uploadError } = await supabase.storage
     .from('winner-proofs')
-    .upload(filePath, proofFile, {
-      upsert: true
-    })
+    .upload(filePath, proofFile, { upsert: true })
 
   if (uploadError) {
     setMessage(uploadError.message)
@@ -226,21 +258,42 @@ const uploadWinnerProof = async () => {
     .from('winner-proofs')
     .getPublicUrl(filePath)
 
-  const { error: dbError } = await supabase
+  const publicUrl = data.publicUrl
+
+  const { error: proofError } = await supabase
     .from('winner_proofs')
     .insert({
       winner_id: winnerId,
       user_id: user.id,
-      proof_url: data.publicUrl,
+      proof_url: publicUrl,
       status: 'pending'
     })
 
-  if (dbError) {
-    setMessage(dbError.message)
-  } else {
-    setMessage('Winner proof uploaded successfully!')
-    setProofFile(null)
+  if (proofError) {
+    setMessage(proofError.message)
+    return
   }
+
+  const { error: winnerError } = await supabase
+    .from('winners')
+    .update({
+      proof_url: publicUrl,
+      verification_status: 'pending'
+    })
+    .eq('id', winnerId)
+
+  if (winnerError) {
+    setMessage(winnerError.message)
+    return
+  }
+
+  setMessage('Winner proof uploaded successfully!')
+setProofFile(null)
+getWinnings(user.id)
+document.getElementById('proofFileInput').value = ''
+setTimeout(() => {
+  setMessage('')
+}, 3000)
 }
 
 
@@ -316,6 +369,41 @@ const uploadWinnerProof = async () => {
   <p style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.8rem', '1.9rem', '2rem', '2rem'), fontWeight: 'bold', color: '#4ade80'}}>
     {profile?.charity_percentage || 10}%
   </p>
+  <select
+  value={profile?.charity_percentage || 10}
+  onChange={async (e) => {
+    const value = Number(e.target.value)
+
+    const { error } = await supabase
+      .from('profiles')
+      .update({
+        charity_percentage: value
+      })
+      .eq('id', user.id)
+
+    if (!error) {
+      setProfile({
+        ...profile,
+        charity_percentage: value
+      })
+    }
+  }}
+  style={{
+    marginTop:'10px',
+    width:'100%',
+    padding:'8px',
+    backgroundColor:'#000',
+    color:'#fff',
+    border:'1px solid #1f2937',
+    borderRadius:'8px'
+  }}
+>
+  <option value="10">10%</option>
+  <option value="15">15%</option>
+  <option value="20">20%</option>
+  <option value="25">25%</option>
+  <option value="30">30%</option>
+</select>
 </div>
 <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
   <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: '8px'}}>
@@ -350,19 +438,18 @@ const uploadWinnerProof = async () => {
 
           </div>
         </div>
-    {true && (
+   {true && (
   <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937', marginBottom:'24px'}}>
     <h2 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'12px'}}>
       Upload Winner Proof
     </h2>
 
     <input
-      type="file"
-      accept="image/*,.pdf"
-      onChange={(e) => setProofFile(e.target.files[0])}
-      style={{marginBottom:'12px', color:'#fff'}}
-    />
-
+  id="proofFileInput"
+  type="file"
+  accept="image/*,.pdf"
+  onChange={(e) => setProofFile(e.target.files[0])}
+/>
     <button
       onClick={uploadWinnerProof}
       style={{

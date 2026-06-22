@@ -40,8 +40,7 @@ export async function POST(request) {
         }
       ],
       mode: 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/subscribe?cancelled=true`,
+success_url: `${process.env.NEXT_PUBLIC_SITE_URL}/dashboard?success=true&plan=${plan}`,      cancel_url: `${process.env.NEXT_PUBLIC_SITE_URL}/subscribe?cancelled=true`,
       customer_email: email,
       metadata: {
         userId: userId,

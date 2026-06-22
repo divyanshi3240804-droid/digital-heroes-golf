@@ -17,6 +17,9 @@ export default function Admin() {
   const [editingCharity, setEditingCharity] = useState(null)
 const [editCharityName, setEditCharityName] = useState('')
 const [charityTotal, setCharityTotal] = useState(0)
+const [editingScoreId, setEditingScoreId] = useState(null)
+const [adminEditScore, setAdminEditScore] = useState('')
+const [adminEditDate, setAdminEditDate] = useState('')
   const [message, setMessage] = useState('')
   const [screenSize, setScreenSize] = useState('desktop')
 
@@ -100,6 +103,35 @@ const [charityTotal, setCharityTotal] = useState(0)
     setMessage('Charity updated successfully!')
     setEditingCharity(null)
     setEditCharityName('')
+    fetchAll()
+  }
+}
+const updateAdminScore = async (scoreId) => {
+  if (!adminEditScore || !adminEditDate) {
+    setMessage('Please enter score and date')
+    return
+  }
+
+  if (adminEditScore < 1 || adminEditScore > 45) {
+    setMessage('Score must be between 1 and 45')
+    return
+  }
+
+  const { error } = await supabase
+    .from('scores')
+    .update({
+      score: parseInt(adminEditScore),
+      date: adminEditDate
+    })
+    .eq('id', scoreId)
+
+  if (error) {
+    setMessage(error.message)
+  } else {
+    setMessage('Score updated successfully!')
+    setEditingScoreId(null)
+    setAdminEditScore('')
+    setAdminEditDate('')
     fetchAll()
   }
 }
@@ -547,11 +579,51 @@ const simulateDraw = () => {
             ) : (
               scores.map((score) => (
                 <div key={score.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: getResponsive('12px 16px', '14px 20px', '16px 24px'), borderBottom: '1px solid #1f2937', flexWrap: 'wrap', gap: getResponsive('8px', '10px', '12px')}}>
-                  <div>
-                    <p style={{fontWeight: 'bold', fontSize: getResponsive('0.85rem', '0.95rem', '1rem')}}>{score.score} points</p>
-                    <p style={{color: '#9ca3af', fontSize: getResponsive('0.65rem', '0.7rem', '0.75rem')}}>{new Date(score.date).toLocaleDateString('en-GB')}</p>
-                  </div>
-                  <span style={{color: '#4ade80', fontSize: getResponsive('0.9rem', '1.2rem', '1.5rem')}}>⛳</span>
+                  {editingScoreId === score.id ? (
+  <div>
+    <input
+      type="number"
+      min="1"
+      max="45"
+      value={adminEditScore}
+      onChange={(e) => setAdminEditScore(e.target.value)}
+      style={{padding:'6px', marginRight:'8px'}}
+    />
+
+    <input
+      type="date"
+      value={adminEditDate}
+      onChange={(e) => setAdminEditDate(e.target.value)}
+      style={{padding:'6px'}}
+    />
+  </div>
+) : (
+  <div>
+    <p style={{fontWeight: 'bold', fontSize: getResponsive('0.85rem', '0.95rem', '1rem')}}>{score.score} points</p>
+    <p style={{color: '#9ca3af', fontSize: getResponsive('0.65rem', '0.7rem', '0.75rem')}}>{new Date(score.date).toLocaleDateString('en-GB')}</p>
+  </div>
+)}
+
+<div style={{display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap'}}>
+  {editingScoreId === score.id ? (
+    <>
+      <button onClick={() => updateAdminScore(score.id)}>Save</button>
+      <button onClick={() => setEditingScoreId(null)}>Cancel</button>
+    </>
+  ) : (
+    <button
+      onClick={() => {
+        setEditingScoreId(score.id)
+        setAdminEditScore(score.score)
+        setAdminEditDate(score.date)
+      }}
+    >
+      Edit
+    </button>
+  )}
+
+  <span style={{color: '#4ade80', fontSize: getResponsive('0.9rem', '1.2rem', '1.5rem')}}>⛳</span>
+</div>
                 </div>
               ))
             )}
@@ -578,49 +650,74 @@ const simulateDraw = () => {
           <p style={{color: '#9ca3af'}}>Prize: £{winner.prize_amount || 0}</p>
           <p style={{color: '#9ca3af'}}>Verification: {winner.verification_status || 'pending'}</p>
           <p style={{color: '#9ca3af'}}>Payment: {winner.payment_status || 'pending'}</p>
-          <div style={{
-  display:'flex',
-  gap:'8px',
-  flexWrap:'wrap',
-  marginTop:'10px'
-}}>
-
-  <button
-    onClick={() =>
-      updateWinnerStatus(
-        winner.id,
-        'verification_status',
-        'approved'
-      )
-    }
+        {winner.proof_url && winner.proof_url !== 'pending' && (
+  <a
+    href={winner.proof_url}
+    target="_blank"
+    rel="noopener noreferrer"
+    style={{
+      display: 'inline-block',
+      color: '#4ade80',
+      marginTop: '10px',
+      fontWeight: 'bold',
+      textDecoration: 'none'
+    }}
   >
-    Approve
+    View Proof Screenshot →
+  </a>
+)}
+<div
+  style={{
+    display:'flex',
+    gap:'8px',
+    flexWrap:'wrap',
+    marginTop:'12px'
+  }}
+>
+  <button
+    onClick={() => updateWinnerStatus(winner.id,'verification_status','approved')}
+    style={{
+      backgroundColor:'#22c55e',
+      color:'#fff',
+      border:'none',
+      padding:'8px 14px',
+      borderRadius:'8px',
+      fontWeight:'bold',
+      cursor:'pointer'
+    }}
+  >
+    ✓ Approve
   </button>
 
   <button
-    onClick={() =>
-      updateWinnerStatus(
-        winner.id,
-        'verification_status',
-        'rejected'
-      )
-    }
+    onClick={() => updateWinnerStatus(winner.id,'verification_status','rejected')}
+    style={{
+      backgroundColor:'#ef4444',
+      color:'#fff',
+      border:'none',
+      padding:'8px 14px',
+      borderRadius:'8px',
+      fontWeight:'bold',
+      cursor:'pointer'
+    }}
   >
-    Reject
+    ✕ Reject
   </button>
 
   <button
-    onClick={() =>
-      updateWinnerStatus(
-        winner.id,
-        'payment_status',
-        'paid'
-      )
-    }
+    onClick={() => updateWinnerStatus(winner.id,'payment_status','paid')}
+    style={{
+      backgroundColor:'#3b82f6',
+      color:'#fff',
+      border:'none',
+      padding:'8px 14px',
+      borderRadius:'8px',
+      fontWeight:'bold',
+      cursor:'pointer'
+    }}
   >
-    Mark Paid
+    💰 Mark Paid
   </button>
-
 </div>
         </div>
       ))

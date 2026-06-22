@@ -1,8 +1,25 @@
 'use client'
 import { useResponsive } from '../lib/useResponsive'
+import { supabase } from '../lib/supabase'
+import { useState, useEffect } from 'react'
 
 export default function Home() {
   const { getResponsive } = useResponsive()
+  const [featuredCharity, setFeaturedCharity] = useState(null)
+
+useEffect(() => {
+  getFeaturedCharity()
+}, [])
+
+const getFeaturedCharity = async () => {
+  const { data } = await supabase
+    .from('charities')
+    .select('*')
+    .limit(1)
+    .single()
+
+  if (data) setFeaturedCharity(data)
+}
 
   return (
     <main style={{minHeight: '100vh', backgroundColor: '#000', color: '#fff', fontFamily: 'sans-serif'}}>
@@ -66,6 +83,23 @@ export default function Home() {
           </div>
         </div>
       </section>
+      {featuredCharity && (
+  <section style={{padding: getResponsive('40px 12px', '60px 20px', '80px 24px', '80px 32px', '80px 48px', '80px 48px'), backgroundColor:'#000'}}>
+    <div style={{maxWidth:'800px', margin:'0 auto', backgroundColor:'#111', border:'1px solid #1f2937', borderRadius:'20px', padding:getResponsive('24px','32px','40px','48px','56px','56px'), textAlign:'center'}}>
+      <p style={{color:'#4ade80', fontWeight:'bold', marginBottom:'10px'}}>FEATURED CHARITY</p>
+      <div style={{fontSize:'3rem', marginBottom:'12px'}}>❤️</div>
+      <h2 style={{fontSize:getResponsive('1.5rem','1.8rem','2rem','2.2rem','2.5rem','2.5rem'), fontWeight:'bold', marginBottom:'12px'}}>
+        {featuredCharity.name}
+      </h2>
+      <p style={{color:'#9ca3af', marginBottom:'20px'}}>
+        {featuredCharity.description}
+      </p>
+      <a href="/charities" style={{backgroundColor:'#4ade80', color:'#000', padding:'12px 20px', borderRadius:'10px', fontWeight:'bold', textDecoration:'none'}}>
+        Explore Charities →
+      </a>
+    </div>
+  </section>
+)}
 
       {/* PLANS */}
       <section style={{padding: getResponsive('40px 12px', '60px 20px', '80px 24px', '80px 32px', '80px 48px', '80px 48px')}}>
