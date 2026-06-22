@@ -10,6 +10,13 @@ export default function Dashboard() {
   const [newDate, setNewDate] = useState('')
   const [loading, setLoading] = useState(true)
   const [message, setMessage] = useState('')
+  const [editingId, setEditingId] = useState(null)
+  const [editScore, setEditScore] = useState('')
+const [editDate, setEditDate] = useState('')
+const [draws, setDraws] = useState([])
+const [winnings, setWinnings] = useState([])
+const [proofFile, setProofFile] = useState(null)
+  const [profile, setProfile] = useState(null)
   const { getResponsive } = useResponsive()
 
   useEffect(() => {
@@ -23,6 +30,9 @@ export default function Dashboard() {
     } else {
       setUser(user)
       getScores(user.id)
+      getProfile(user.id)
+      getDraws()
+       getWinnings(user.id)
     }
     setLoading(false)
   }
@@ -36,34 +46,168 @@ export default function Dashboard() {
       .limit(5)
     if (data) setScores(data)
   }
+const getProfile = async (userId) => {
+  const { data, error } = await supabase
+    .from('profiles')
+    .select(`
+      *,
+      charities (
+        name
+      )
+    `)
+    .eq('id', userId)
+    .single()
+
+  if (!error && data) {
+    setProfile(data)
+  }
+}
+const getDraws = async () => {
+  const { data } = await supabase
+    .from('draws')
+    .select('*')
+    .order('created_at', { ascending: false })
+
+  if (data) setDraws(data)
+}
+
+const getWinnings = async (userId) => {
+  const { data } = await supabase
+    .from('winners')
+    .select('*')
+    .eq('user_id', userId)
+
+  if (data) setWinnings(data)
+}
 
   const addScore = async () => {
-    if (!newScore || !newDate) {
-      setMessage('Please enter both score and date!')
-      return
-    }
-    if (newScore < 1 || newScore > 45) {
-      setMessage('Score must be between 1 and 45!')
-      return
-    }
+if (!newScore || !newDate) {
+setMessage('Please enter both score and date!')
+return
+}
 
-    const { error } = await supabase
-      .from('scores')
-      .insert([{
-        user_id: user.id,
-        score: parseInt(newScore),
-        date: newDate
-      }])
+if (newScore < 1 || newScore > 45) {
+setMessage('Score must be between 1 and 45!')
+return
+}
 
-    if (error) {
-      setMessage(error.message)
-    } else {
-      setMessage('Score added successfully!')
-      setNewScore('')
-      setNewDate('')
-      getScores(user.id)
-    }
+const { error } = await supabase
+.from('scores')
+.insert([
+{
+user_id: user.id,
+score: parseInt(newScore),
+date: newDate
+}
+])
+
+if (error) {
+if (error.message.includes('scores_date_key')) {
+setMessage(
+'A score already exists for this date. Please edit the existing score instead.'
+)
+} else {
+setMessage(error.message)
+}
+} else {
+setMessage('Score added successfully!')
+setNewScore('')
+setNewDate('')
+getScores(user.id)
+}
+}
+const deleteScore = async (scoreId) => {
+const { error } = await supabase
+.from('scores')
+.delete()
+.eq('id', scoreId)
+
+if (error) {
+setMessage(error.message)
+} else {
+setMessage('Score deleted successfully!')
+getScores(user.id)
+}
+}
+const updateScore = async (scoreId) => {
+if (!editScore || !editDate) {
+setMessage('Please enter both score and date!')
+return
+}
+
+if (editScore < 1 || editScore > 45) {
+setMessage('Score must be between 1 and 45!')
+return
+}
+
+const { error } = await supabase
+.from('scores')
+.update({
+score: parseInt(editScore),
+date: editDate
+})
+.eq('id', scoreId)
+
+if (error) {
+if (error.message.includes('scores_date_key')) {
+setMessage('A score already exists for this date.')
+} else {
+setMessage(error.message)
+}
+} else {
+setMessage('Score updated successfully!')
+setEditingId(null)
+setEditScore('')
+setEditDate('')
+getScores(user.id)
+}
+}
+const uploadWinnerProof = async () => {
+  if (!proofFile) {
+    setMessage('Please choose a proof file first.')
+    return
   }
+
+  if (winnings.length === 0) {
+    setMessage('No winnings found for proof upload.')
+    return
+  }
+
+  const winnerId = winnings[0].id
+  const filePath = `${user.id}/${winnerId}-${proofFile.name}`
+
+  const { error: uploadError } = await supabase.storage
+    .from('winner-proofs')
+    .upload(filePath, proofFile, {
+      upsert: true
+    })
+
+  if (uploadError) {
+    setMessage(uploadError.message)
+    return
+  }
+
+  const { data } = supabase.storage
+    .from('winner-proofs')
+    .getPublicUrl(filePath)
+
+  const { error: dbError } = await supabase
+    .from('winner_proofs')
+    .insert({
+      winner_id: winnerId,
+      user_id: user.id,
+      proof_url: data.publicUrl,
+      status: 'pending'
+    })
+
+  if (dbError) {
+    setMessage(dbError.message)
+  } else {
+    setMessage('Winner proof uploaded successfully!')
+    setProofFile(null)
+  }
+}
+
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -110,10 +254,81 @@ export default function Dashboard() {
           </div>
           <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
             <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>SUBSCRIPTION</p>
-            <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#f59e0b'}}>Inactive</p>
+            <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#f59e0b'}}>
+  {profile?.subscription_status || 'Inactive'}
+</p>
+<div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+  <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: '8px'}}>SELECTED CHARITY</p>
+  <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#4ade80'}}>
+    {profile?.charities?.name || 'Not selected'}
+  </p>
+</div>
+
+<div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+  <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: '8px'}}>CHARITY CONTRIBUTION</p>
+  <p style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.8rem', '1.9rem', '2rem', '2rem'), fontWeight: 'bold', color: '#4ade80'}}>
+    {profile?.charity_percentage || 10}%
+  </p>
+</div>
+<div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+  <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: '8px'}}>
+    PARTICIPATION SUMMARY
+  </p>
+
+  <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#4ade80'}}>
+    Draws Entered: {draws.length}
+  </p>
+
+  <p style={{color: '#9ca3af', fontSize: '0.85rem', marginTop: '6px'}}>
+    Scores Submitted: {scores.length}
+  </p>
+</div>
+
+<div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+  <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: '8px'}}>
+    WINNINGS OVERVIEW
+  </p>
+
+  <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#4ade80'}}>
+    Total Wins: {winnings.length}
+  </p>
+
+  <p style={{color: '#9ca3af', fontSize: '0.85rem', marginTop: '6px'}}>
+    Status: {winnings.length > 0 ? winnings[0]?.payment_status || 'Pending' : 'No winnings yet'}
+  </p>
+</div>
+
           </div>
         </div>
+    {true && (
+  <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937', marginBottom:'24px'}}>
+    <h2 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'12px'}}>
+      Upload Winner Proof
+    </h2>
 
+    <input
+      type="file"
+      accept="image/*,.pdf"
+      onChange={(e) => setProofFile(e.target.files[0])}
+      style={{marginBottom:'12px', color:'#fff'}}
+    />
+
+    <button
+      onClick={uploadWinnerProof}
+      style={{
+        backgroundColor:'#4ade80',
+        color:'#000',
+        border:'none',
+        padding:'10px 16px',
+        borderRadius:'8px',
+        fontWeight:'bold',
+        cursor:'pointer'
+      }}
+    >
+      Upload Proof
+    </button>
+  </div>
+)}
         {/* ADD SCORE */}
         <div style={{backgroundColor: '#111', padding: getResponsive('18px', '20px', '24px', '28px', '32px', '32px'), borderRadius: '16px', border: '1px solid #1f2937', marginBottom: getResponsive('20px', '24px', '28px', '32px', '32px', '32px')}}>
           <h2 style={{fontSize: getResponsive('1.1rem', '1.15rem', '1.2rem', '1.25rem', '1.3rem', '1.3rem'), fontWeight: 'bold', marginBottom: getResponsive('14px', '16px', '18px', '20px', '24px', '24px')}}>Add Golf Score ⛳</h2>
@@ -171,13 +386,112 @@ export default function Dashboard() {
                       {index + 1}
                     </div>
                     <div>
-                      <p style={{fontWeight: 'bold', fontSize: getResponsive('0.9rem', '0.95rem', '1rem', '1.05rem', '1.1rem', '1.1rem')}}>{score.score} points</p>
-                      <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>{new Date(score.date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})}</p>
+                      {editingId === score.id ? (
+  <div>
+    <input
+      type="number"
+      min="1"
+      max="45"
+      value={editScore}
+      onChange={(e) => setEditScore(e.target.value)}
+      style={{width:'90px', padding:'6px', marginBottom:'6px'}}
+    />
+
+    <input
+      type="date"
+      value={editDate}
+      onChange={(e) => setEditDate(e.target.value)}
+      style={{width:'140px', padding:'6px'}}
+    />
+  </div>
+) : (
+  <div>
+    <p style={{fontWeight: 'bold', fontSize: getResponsive('0.9rem', '0.95rem', '1rem', '1.05rem', '1.1rem', '1.1rem')}}>{score.score} points</p>
+    <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>{new Date(score.date).toLocaleDateString('en-GB', {day: '2-digit', month: 'short', year: 'numeric'})}</p>
+  </div>
+)}
                     </div>
                   </div>
-                  <div style={{color: '#4ade80', fontWeight: 'bold', fontSize: getResponsive('1.2rem', '1.3rem', '1.4rem', '1.5rem', '1.5rem', '1.5rem')}}>
-                    ⛳
-                  </div>
+                  <div style={{display:'flex', gap:'10px', alignItems:'center'}}>
+                    <div style={{display:'flex', gap:'8px', alignItems:'center', flexWrap:'wrap'}}>
+
+{editingId === score.id ? (
+<>
+<button
+onClick={() => updateScore(score.id)}
+style={{
+backgroundColor:'#22c55e',
+color:'#fff',
+border:'none',
+padding:'6px 10px',
+borderRadius:'6px',
+cursor:'pointer'
+}}
+>
+Save </button>
+
+
+  <button
+    onClick={() => setEditingId(null)}
+    style={{
+      backgroundColor:'#6b7280',
+      color:'#fff',
+      border:'none',
+      padding:'6px 10px',
+      borderRadius:'6px',
+      cursor:'pointer'
+    }}
+  >
+    Cancel
+  </button>
+</>
+
+
+) : (
+<button
+onClick={() => {
+setEditingId(score.id)
+setEditScore(score.score)
+setEditDate(score.date)
+}}
+style={{
+backgroundColor:'#3b82f6',
+color:'#fff',
+border:'none',
+padding:'6px 10px',
+borderRadius:'6px',
+cursor:'pointer'
+}}
+>
+Edit </button>
+)}
+
+<button
+onClick={() => deleteScore(score.id)}
+style={{
+backgroundColor:'#ef4444',
+color:'#fff',
+border:'none',
+padding:'6px 10px',
+borderRadius:'6px',
+cursor:'pointer'
+}}
+
+>
+
+
+Delete
+
+
+  </button>
+
+</div>
+
+  <div style={{color:'#4ade80', fontWeight:'bold'}}>
+    ⛳
+  </div>
+</div>
+
                 </div>
               ))}
             </div>

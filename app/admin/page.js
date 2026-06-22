@@ -7,15 +7,18 @@ export default function Admin() {
   const [scores, setScores] = useState([])
   const [charities, setCharities] = useState([])
   const [draws, setDraws] = useState([])
+  const [winners, setWinners] = useState([])
   const [loading, setLoading] = useState(true)
   const [activeTab, setActiveTab] = useState('users')
   const [newCharity, setNewCharity] = useState({ name: '', description: '' })
   const [drawResult, setDrawResult] = useState(null)
+  const [simulatedNumbers, setSimulatedNumbers] = useState([])
   const [message, setMessage] = useState('')
   const [screenSize, setScreenSize] = useState('desktop')
 
   useEffect(() => {
     fetchAll()
+   
   }, [])
 
   useEffect(() => {
@@ -35,10 +38,12 @@ export default function Admin() {
     const { data: scoresData } = await supabase.from('scores').select('*')
     const { data: charitiesData } = await supabase.from('charities').select('*')
     const { data: drawsData } = await supabase.from('draws').select('*')
+    const { data: winnersData } = await supabase .from('winners') .select('*')
     if (usersData) setUsers(usersData)
     if (scoresData) setScores(scoresData)
     if (charitiesData) setCharities(charitiesData)
     if (drawsData) setDraws(drawsData)
+      if (winnersData) setWinners(winnersData)
     setLoading(false)
   }
 
@@ -96,6 +101,36 @@ export default function Admin() {
       fetchAll()
     }
   }
+  
+const simulateDraw = () => {
+  const numbers = []
+
+  while (numbers.length < 5) {
+    const num = Math.floor(Math.random() * 45) + 1
+
+    if (!numbers.includes(num)) {
+      numbers.push(num)
+    }
+  }
+
+  numbers.sort((a, b) => a - b)
+  setSimulatedNumbers(numbers)
+}
+  const updateWinnerStatus = async (winnerId, field, value) => {
+  const { error } = await supabase
+    .from('winners')
+    .update({
+      [field]: value
+    })
+    .eq('id', winnerId)
+
+  if (error) {
+    setMessage(error.message)
+  } else {
+    setMessage('Winner updated successfully!')
+    fetchAll()
+  }
+}
 
   const tabStyle = (tab) => ({
     padding: screenSize === 'mobile' ? '8px 12px' : screenSize === 'tablet' ? '9px 18px' : '10px 24px',
@@ -160,6 +195,7 @@ export default function Admin() {
           <button style={tabStyle('charities')} onClick={() => setActiveTab('charities')}>Charities</button>
           <button style={tabStyle('draws')} onClick={() => setActiveTab('draws')}>Draw System</button>
           <button style={tabStyle('scores')} onClick={() => setActiveTab('scores')}>Scores</button>
+          <button style={tabStyle('winners')} onClick={() => setActiveTab('winners')}>Winners</button>
         </div>
 
         {message && (
@@ -265,6 +301,56 @@ export default function Admin() {
                 </div>
               )}
 
+              <button
+  onClick={simulateDraw}
+  style={{
+    backgroundColor:'#3b82f6',
+    color:'#fff',
+    border:'none',
+    padding:getResponsive('10px 16px','12px 32px','16px 48px'),
+    borderRadius:'12px',
+    fontWeight:'bold',
+    cursor:'pointer',
+    marginRight:'10px'
+  }}
+>
+  🎲 Simulate Draw
+</button>
+{simulatedNumbers.length > 0 && (
+  <div
+    style={{
+      backgroundColor:'#000',
+      padding:'20px',
+      borderRadius:'12px',
+      marginBottom:'20px'
+    }}
+  >
+    <p style={{color:'#9ca3af', marginBottom:'12px'}}>
+      Simulation Result
+    </p>
+
+    <div style={{display:'flex', gap:'8px', justifyContent:'center'}}>
+      {simulatedNumbers.map((num, i) => (
+        <div
+          key={i}
+          style={{
+            backgroundColor:'#3b82f6',
+            color:'#fff',
+            width:'40px',
+            height:'40px',
+            borderRadius:'50%',
+            display:'flex',
+            alignItems:'center',
+            justifyContent:'center',
+            fontWeight:'bold'
+          }}
+        >
+          {num}
+        </div>
+      ))}
+    </div>
+  </div>
+)}
               <button onClick={runDraw} style={{backgroundColor: '#4ade80', color: '#000', border: 'none', padding: getResponsive('10px 16px', '12px 32px', '16px 48px'), borderRadius: '12px', fontWeight: 'bold', fontSize: getResponsive('0.8rem', '0.95rem', '1.1rem'), cursor: 'pointer'}}>
                 🎰 Run Monthly Draw
               </button>
@@ -322,6 +408,76 @@ export default function Admin() {
             )}
           </div>
         )}
+        {/* WINNERS TAB */}
+{activeTab === 'winners' && (
+  <div style={{backgroundColor: '#111', borderRadius: '16px', border: '1px solid #1f2937', overflow: 'hidden'}}>
+    <div style={{padding: getResponsive('16px', '20px', '24px'), borderBottom: '1px solid #1f2937'}}>
+      <h2 style={{fontSize: getResponsive('1rem', '1.1rem', '1.2rem'), fontWeight: 'bold'}}>
+        Winner Verification
+      </h2>
+    </div>
+
+    {winners.length === 0 ? (
+      <p style={{padding: getResponsive('24px', '32px', '40px'), textAlign: 'center', color: '#9ca3af'}}>
+        No winners yet
+      </p>
+    ) : (
+      winners.map((winner) => (
+        <div key={winner.id} style={{padding: getResponsive('12px 16px', '14px 20px', '16px 24px'), borderBottom: '1px solid #1f2937'}}>
+          <p style={{fontWeight: 'bold'}}>User ID: {winner.user_id}</p>
+          <p style={{color: '#9ca3af'}}>Match Type: {winner.match_type || 'N/A'}</p>
+          <p style={{color: '#9ca3af'}}>Prize: £{winner.prize_amount || 0}</p>
+          <p style={{color: '#9ca3af'}}>Verification: {winner.verification_status || 'pending'}</p>
+          <p style={{color: '#9ca3af'}}>Payment: {winner.payment_status || 'pending'}</p>
+          <div style={{
+  display:'flex',
+  gap:'8px',
+  flexWrap:'wrap',
+  marginTop:'10px'
+}}>
+
+  <button
+    onClick={() =>
+      updateWinnerStatus(
+        winner.id,
+        'verification_status',
+        'approved'
+      )
+    }
+  >
+    Approve
+  </button>
+
+  <button
+    onClick={() =>
+      updateWinnerStatus(
+        winner.id,
+        'verification_status',
+        'rejected'
+      )
+    }
+  >
+    Reject
+  </button>
+
+  <button
+    onClick={() =>
+      updateWinnerStatus(
+        winner.id,
+        'payment_status',
+        'paid'
+      )
+    }
+  >
+    Mark Paid
+  </button>
+
+</div>
+        </div>
+      ))
+    )}
+  </div>
+)}
 
       </div>
     </main>
