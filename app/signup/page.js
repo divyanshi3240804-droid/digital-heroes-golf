@@ -88,11 +88,7 @@ const handleSignup = async () => {
 
     setMessage('Account created successfully!')
   }
-
-  setLoading(false)
-}
-
-await fetch('/api/send-email', {
+  await fetch('/api/send-email', {
   method: 'POST',
   headers: {'Content-Type': 'application/json'},
   body: JSON.stringify({
@@ -101,6 +97,11 @@ await fetch('/api/send-email', {
     message: 'Welcome! Your GolfHeroes account has been created successfully.'
   })
 })
+
+  setLoading(false)
+}
+
+
   return (
     <main style={{minHeight: '100vh', backgroundColor: '#000', color: '#fff', fontFamily: 'sans-serif', display: 'flex', alignItems: 'center', justifyContent: 'center', padding: getResponsive('10px', '12px', '14px', '16px', '20px', '20px')}}>
       <div style={{backgroundColor: '#111', padding: getResponsive('24px', '28px', '32px', '40px', '48px', '48px'), borderRadius: '16px', width: '100%', maxWidth: '420px', border: '1px solid #1f2937'}}>
