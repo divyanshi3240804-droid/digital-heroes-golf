@@ -16,7 +16,13 @@ export default function Admin() {
   const [prizePool, setPrizePool] = useState(0)
   const [editingCharity, setEditingCharity] = useState(null)
 const [editCharityName, setEditCharityName] = useState('')
+const [editCharityImage, setEditCharityImage] = useState('')
+const [editCharityCategory, setEditCharityCategory] = useState('')
+const [editCharityEvent, setEditCharityEvent] = useState('')
+const [editCharityDescription, setEditCharityDescription] = useState('')
 const [charityTotal, setCharityTotal] = useState(0)
+const [prizesAwarded, setPrizesAwarded] = useState(0)
+const [charityRaised, setCharityRaised] = useState(0)
 const [editingScoreId, setEditingScoreId] = useState(null)
 const [adminEditScore, setAdminEditScore] = useState('')
 const [adminEditDate, setAdminEditDate] = useState('')
@@ -45,21 +51,42 @@ const [adminEditDate, setAdminEditDate] = useState('')
     const { data: scoresData } = await supabase.from('scores').select('*')
     const { data: charitiesData } = await supabase.from('charities').select('*')
     const { data: drawsData } = await supabase.from('draws').select('*')
-    const { data: winnersData } = await supabase .from('winners') .select('*')
+const { data: winnersData } = await supabase
+  .from('winners')
+  .select(`
+    *,
+    profiles (
+      full_name,
+      email
+    )
+  `)
     if (usersData) setUsers(usersData)
     if (scoresData) setScores(scoresData)
     if (charitiesData) setCharities(charitiesData)
     if (drawsData) setDraws(drawsData)
-      if (usersData) {
+if (usersData) {
   const activeUsers = usersData.filter(
     u => u.subscription_status === 'active'
   )
 
   setPrizePool(activeUsers.length * 10)
   setCharityTotal(activeUsers.length * 1)
+
+  setCharityRaised((activeUsers.length * 1).toFixed(2))
 }
-      if (winnersData) setWinners(winnersData)
-    setLoading(false)
+
+if (winnersData) {
+  setWinners(winnersData)
+
+  const totalPrizes = winnersData.reduce(
+    (sum, winner) => sum + (winner.prize_amount || 0),
+    0
+  )
+
+  setPrizesAwarded(totalPrizes)
+}
+setLoading(false)
+      
   }
 
   const addCharity = async () => {
@@ -89,11 +116,16 @@ const [adminEditDate, setAdminEditDate] = useState('')
       fetchAll()
     }
   }
-  const updateCharity = async () => {
+
+ const updateCharity = async () => {
   const { error } = await supabase
     .from('charities')
     .update({
-      name: editCharityName
+      name: editCharityName,
+      description: editCharityDescription,
+      image_url: editCharityImage,
+      category: editCharityCategory,
+      upcoming_event: editCharityEvent
     })
     .eq('id', editingCharity)
 
@@ -102,10 +134,11 @@ const [adminEditDate, setAdminEditDate] = useState('')
   } else {
     setMessage('Charity updated successfully!')
     setEditingCharity(null)
-    setEditCharityName('')
     fetchAll()
   }
 }
+  
+
 const updateAdminScore = async (scoreId) => {
   if (!adminEditScore || !adminEditDate) {
     setMessage('Please enter score and date')
@@ -136,46 +169,224 @@ const updateAdminScore = async (scoreId) => {
   }
 }
 
-  const runDraw = async () => {
-    // Generate 5 random numbers between 1-45
-    const winningNumbers = []
-    while (winningNumbers.length < 5) {
-      const num = Math.floor(Math.random() * 45) + 1
-      if (!winningNumbers.includes(num)) {
-        winningNumbers.push(num)
-      }
-    }
-    winningNumbers.sort((a, b) => a - b)
 
-    const { error } = await supabase
-      .from('draws')
-      .insert([{
-        winning_numbers: winningNumbers,
-        status: 'completed',
-        jackpot_amount: 1000,
-        draw_date: new Date().toISOString()
-      }])
+ const runDraw = async () => {
+  const now = new Date()
+  const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString()
+  const endOfMonth = new Date(now.getFullYear(), now.getMonth() + 1, 1).toISOString()
 
-    if (!error) {
-      setDrawResult(winningNumbers)
-      setMessage('Draw completed successfully!')
-      fetchAll()
+  const { data: existingDraw } = await supabase
+    .from('draws')
+    .select('*')
+    .gte('draw_date', startOfMonth)
+    .lt('draw_date', endOfMonth)
+    .limit(1)
+    .maybeSingle()
+
+  if (existingDraw) {
+    setMessage('Official draw already completed for this month.')
+    return
+  }
+
+  const { data: lastDraw } = await supabase
+    .from('draws')
+    .select('*')
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .maybeSingle()
+    const { data: activeUsers } = await supabase
+  .from('profiles')
+  .select('id')
+  .eq('subscription_status', 'active')
+  const subscriberPool =
+  (activeUsers?.length || 0) * 10
+
+const currentJackpot =
+  subscriberPool +
+  (lastDraw?.rollover_amount || 0)
+
+  const winningNumbers = []
+
+  while (winningNumbers.length < 5) {
+    const num = Math.floor(Math.random() * 45) + 1
+
+    if (!winningNumbers.includes(num)) {
+      winningNumbers.push(num)
     }
   }
-  const publishDraw = async (drawId) => {
+
+  winningNumbers.sort((a, b) => a - b)
+
+  const { data: drawData, error } = await supabase
+    .from('draws')
+    .insert([{
+      winning_numbers: winningNumbers,
+      status: 'completed',
+      jackpot_amount: currentJackpot,
+      draw_date: new Date().toISOString()
+    }])
+    .select()
+    .single()
+
+  if (error) {
+    setMessage(error.message)
+    return
+  }
+
+  
+  const tierWinners = {
+    '5 Match': [],
+    '4 Match': [],
+    '3 Match': []
+  }
+
+  for (const activeUser of activeUsers || []) {
+    const { data: userScores } = await supabase
+      .from('scores')
+      .select('score')
+      .eq('user_id', activeUser.id)
+      .order('created_at', { ascending: false })
+      .limit(5)
+
+    if (!userScores || userScores.length < 5) continue
+
+    const userNumbers = userScores.map((s) => Number(s.score))
+
+    const matches = userNumbers.filter((num) =>
+      winningNumbers.includes(num)
+    ).length
+
+    let matchType = null
+
+    if (matches === 5) {
+      matchType = '5 Match'
+    } else if (matches === 4) {
+      matchType = '4 Match'
+    } else if (matches === 3) {
+      matchType = '3 Match'
+    }
+
+    if (matchType) {
+      tierWinners[matchType].push({
+        user_id: activeUser.id,
+        match_type: matchType
+      })
+    }
+  }
+
+  const fivePool = currentJackpot * 0.40
+  const fourPool = currentJackpot * 0.35
+  const threePool = currentJackpot * 0.25
+
+  const fivePrize =
+    tierWinners['5 Match'].length > 0
+      ? fivePool / tierWinners['5 Match'].length
+      : 0
+
+  const fourPrize =
+    tierWinners['4 Match'].length > 0
+      ? fourPool / tierWinners['4 Match'].length
+      : 0
+
+  const threePrize =
+    tierWinners['3 Match'].length > 0
+      ? threePool / tierWinners['3 Match'].length
+      : 0
+
+  for (const winner of tierWinners['5 Match']) {
+    await supabase.from('winners').insert({
+      draw_id: drawData.id,
+      user_id: winner.user_id,
+      match_type: '5 Match',
+      prize_amount: fivePrize,
+      payment_status: 'pending',
+      verification_status: 'pending',
+      proof_url: 'pending'
+    })
+  }
+
+  for (const winner of tierWinners['4 Match']) {
+    await supabase.from('winners').insert({
+      draw_id: drawData.id,
+      user_id: winner.user_id,
+      match_type: '4 Match',
+      prize_amount: fourPrize,
+      payment_status: 'pending',
+      verification_status: 'pending',
+      proof_url: 'pending'
+    })
+  }
+
+  for (const winner of tierWinners['3 Match']) {
+    await supabase.from('winners').insert({
+      draw_id: drawData.id,
+      user_id: winner.user_id,
+      match_type: '3 Match',
+      prize_amount: threePrize,
+      payment_status: 'pending',
+      verification_status: 'pending',
+      proof_url: 'pending'
+    })
+  }
+
+  if (tierWinners['5 Match'].length === 0) {
+    await supabase
+      .from('draws')
+      .update({
+        rollover_amount: fivePool
+      })
+      .eq('id', drawData.id)
+  }
+
+  setDrawResult(winningNumbers)
+  setMessage('Draw completed successfully with prize calculation!')
+  fetchAll()
+}
+
+const publishDraw = async (drawId) => {
   const { error } = await supabase
     .from('draws')
-    .update({ status: 'published' })
+    .update({
+      status: 'published'
+    })
     .eq('id', drawId)
 
   if (error) {
     setMessage(error.message)
   } else {
-    setMessage('Draw results published successfully!')
-    fetchAll()
+    setMessage('Draw published successfully!')
+
+    for (const user of users) {
+  if (user.email) {
+    await fetch('/api/send-email', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify({
+        to: user.email,
+        subject: 'Draw Results Published',
+        message: 'The latest GolfHeroes draw results have been published. Check your dashboard for details.'
+      })
+    })
   }
 }
 
+    const userEmail = users.find(u => u.id === userId)?.email
+
+if (userEmail) {
+  await fetch('/api/send-email', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({
+      to: userEmail,
+      subject: `Subscription ${status}`,
+      message: `Your subscription status has been updated to ${status}${plan ? ` (${plan})` : ''}.`
+    })
+  })
+}
+
+    fetchAll()
+  }
+}
  const updateSubscription = async (userId, status, plan = null) => {
   const updateData = {
     subscription_status: status
@@ -211,7 +422,7 @@ const simulateDraw = () => {
   numbers.sort((a, b) => a - b)
   setSimulatedNumbers(numbers)
 }
-  const updateWinnerStatus = async (winnerId, field, value) => {
+  const updateWinnerStatus = async (winnerId, field, value,email) => {
   const { error } = await supabase
     .from('winners')
     .update({
@@ -222,9 +433,64 @@ const simulateDraw = () => {
   if (error) {
     setMessage(error.message)
   } else {
+    console.log('Creating notification...')
+    console.log('Winner email:', email)
+    await supabase.from('notifications').insert({
+  type: 'winner_alert',
+  subject: `Winner ${value}`,
+  message: `Your winner verification status has been updated to ${value}.`,
+  status: 'pending'
+})
+const emailResponse = await fetch('/api/send-email', {
+  method: 'POST',
+  headers: {
+    'Content-Type': 'application/json'
+  },
+  body: JSON.stringify({
+    to: email,
+    subject: `Winner ${value}`,
+    message: `Your winner verification status has been updated to ${value}.`
+  })
+})
+
+const emailData = await emailResponse.json()
+console.log('Email response:', emailData)
     setMessage('Winner updated successfully!')
     fetchAll()
   }
+}
+const runAlgorithmicDraw = async () => {
+  const { data: allScores } = await supabase
+    .from('scores')
+    .select('score')
+
+  if (!allScores || allScores.length === 0) {
+    setMessage('No scores available for algorithmic draw.')
+    return
+  }
+
+  const frequency = {}
+
+  allScores.forEach((item) => {
+    const score = Number(item.score)
+    frequency[score] = (frequency[score] || 0) + 1
+  })
+
+  const sortedScores = Object.entries(frequency)
+    .sort((a, b) => b[1] - a[1])
+    .map(([score]) => Number(score))
+
+  const winningNumbers = sortedScores.slice(0, 5)
+
+  while (winningNumbers.length < 5) {
+    const num = Math.floor(Math.random() * 45) + 1
+    if (!winningNumbers.includes(num)) {
+      winningNumbers.push(num)
+    }
+  }
+
+  setSimulatedNumbers(winningNumbers.sort((a, b) => a - b))
+  setMessage('Algorithmic draw simulation generated.')
 }
 
   const tabStyle = (tab) => ({
@@ -284,16 +550,35 @@ const simulateDraw = () => {
           </div>
         </div>
         <div style={{backgroundColor:'#111', padding:getResponsive('16px','20px','24px'), borderRadius:'16px', border:'1px solid #1f2937', textAlign:'center'}}>
-  <p style={{color:'#9ca3af', fontSize:getResponsive('0.7rem','0.75rem','0.8rem'), marginBottom:'8px'}}>PRIZE POOL</p>
+  <p style={{color:'#9ca3af', fontSize:getResponsive('0.7rem','0.75rem','0.8rem'), marginBottom:'8px'}}> ESTIMATED PRIZE POOL</p>
   <p style={{fontSize:getResponsive('1.5rem','2rem','2.5rem'), fontWeight:'bold', color:'#4ade80'}}>
     £{prizePool}
   </p>
 </div>
 
 <div style={{backgroundColor:'#111', padding:getResponsive('16px','20px','24px'), borderRadius:'16px', border:'1px solid #1f2937', textAlign:'center'}}>
-  <p style={{color:'#9ca3af', fontSize:getResponsive('0.7rem','0.75rem','0.8rem'), marginBottom:'8px'}}>CHARITY TOTAL</p>
+  <p style={{color:'#9ca3af', fontSize:getResponsive('0.7rem','0.75rem','0.8rem'), marginBottom:'8px'}}> ESTIMATED CHARITY TOTAL</p>
   <p style={{fontSize:getResponsive('1.5rem','2rem','2.5rem'), fontWeight:'bold', color:'#4ade80'}}>
     £{charityTotal}
+  </p>
+</div>
+<div style={{backgroundColor:'#111', padding:getResponsive('16px','20px','24px'), borderRadius:'16px', border:'1px solid #1f2937', textAlign:'center'}}>
+  <p style={{color:'#9ca3af', marginBottom:'8px'}}>
+    PRIZES AWARDED
+  </p>
+
+  <p style={{fontSize:getResponsive('1.5rem','2rem','2.5rem'), fontWeight:'bold', color:'#4ade80'}}>
+    £{prizesAwarded}
+  </p>
+</div>
+
+<div style={{backgroundColor:'#111', padding:getResponsive('16px','20px','24px'), borderRadius:'16px', border:'1px solid #1f2937', textAlign:'center'}}>
+  <p style={{color:'#9ca3af', marginBottom:'8px'}}>
+    CHARITY RAISED
+  </p>
+
+  <p style={{fontSize:getResponsive('1.5rem','2rem','2.5rem'), fontWeight:'bold', color:'#4ade80'}}>
+    £{charityRaised}
   </p>
 </div>
 
@@ -405,18 +690,40 @@ const simulateDraw = () => {
                 <div key={charity.id} style={{display: 'flex', justifyContent: 'space-between', alignItems: screenSize === 'mobile' ? 'flex-start' : 'center', padding: getResponsive('12px 16px', '14px 20px', '16px 24px'), borderBottom: '1px solid #1f2937', flexWrap: screenSize === 'mobile' ? 'wrap' : 'nowrap', gap: getResponsive('8px', '10px', '12px')}}>
                   <div style={{flex: 1}}>
                     {editingCharity === charity.id ? (
+  <div style={{display:'flex', flexDirection:'column', gap:'8px'}}>
   <input
     type="text"
     value={editCharityName}
     onChange={(e) => setEditCharityName(e.target.value)}
-    style={{
-      padding:'8px',
-      backgroundColor:'#000',
-      color:'#fff',
-      border:'1px solid #1f2937',
-      borderRadius:'8px'
-    }}
+    placeholder="Charity Name"
   />
+<input
+  type="text"
+  value={editCharityDescription}
+  onChange={(e) => setEditCharityDescription(e.target.value)}
+  placeholder="Description"
+/>
+  <input
+    type="text"
+    value={editCharityImage}
+    onChange={(e) => setEditCharityImage(e.target.value)}
+    placeholder="Image URL"
+  />
+
+  <input
+    type="text"
+    value={editCharityCategory}
+    onChange={(e) => setEditCharityCategory(e.target.value)}
+    placeholder="Category"
+  />
+
+  <input
+    type="text"
+    value={editCharityEvent}
+    onChange={(e) => setEditCharityEvent(e.target.value)}
+    placeholder="Upcoming Event"
+  />
+</div>
 ) : (
   <>
     <p style={{fontWeight:'bold'}}>{charity.name}</p>
@@ -432,9 +739,14 @@ const simulateDraw = () => {
 ) : (
   <button
     onClick={() => {
-      setEditingCharity(charity.id)
-      setEditCharityName(charity.name)
+      setEditingCharity(charity.id || '')
+      setEditCharityName(charity.name || '')
+      setEditCharityImage(charity.image_url || '')
+setEditCharityCategory(charity.category || '')
+setEditCharityEvent(charity.upcoming_event || '')
+setEditCharityDescription(charity.description || '')
     }}
+  
   >
     Edit
   </button>
@@ -516,8 +828,23 @@ const simulateDraw = () => {
     </div>
   </div>
 )}
+<button
+  onClick={runAlgorithmicDraw}
+  style={{
+    backgroundColor:'#8b5cf6',
+    color:'#fff',
+    border:'none',
+    padding:getResponsive('10px 16px','12px 32px','16px 48px'),
+    borderRadius:'12px',
+    fontWeight:'bold',
+    cursor:'pointer',
+    marginRight:'10px'
+  }}
+>
+  🧠 Algorithmic Simulation
+</button>
               <button onClick={runDraw} style={{backgroundColor: '#4ade80', color: '#000', border: 'none', padding: getResponsive('10px 16px', '12px 32px', '16px 48px'), borderRadius: '12px', fontWeight: 'bold', fontSize: getResponsive('0.8rem', '0.95rem', '1.1rem'), cursor: 'pointer'}}>
-                🎰 Run Monthly Draw
+                🎰 Run Draw
               </button>
             </div>
 
@@ -639,17 +966,59 @@ const simulateDraw = () => {
     </div>
 
     {winners.length === 0 ? (
-      <p style={{padding: getResponsive('24px', '32px', '40px'), textAlign: 'center', color: '#9ca3af'}}>
-        No winners yet
-      </p>
+      <div style={{
+  textAlign:'center',
+  padding:'40px'
+}}>
+  <div style={{fontSize:'3rem'}}>🏆</div>
+  <h3>No Winners Yet</h3>
+  <p style={{color:'#9ca3af'}}>
+    Run a draw to generate winners.
+  </p>
+</div>
     ) : (
       winners.map((winner) => (
-        <div key={winner.id} style={{padding: getResponsive('12px 16px', '14px 20px', '16px 24px'), borderBottom: '1px solid #1f2937'}}>
-          <p style={{fontWeight: 'bold'}}>User ID: {winner.user_id}</p>
-          <p style={{color: '#9ca3af'}}>Match Type: {winner.match_type || 'N/A'}</p>
-          <p style={{color: '#9ca3af'}}>Prize: £{winner.prize_amount || 0}</p>
-          <p style={{color: '#9ca3af'}}>Verification: {winner.verification_status || 'pending'}</p>
-          <p style={{color: '#9ca3af'}}>Payment: {winner.payment_status || 'pending'}</p>
+        <div key={winner.id} 
+        style={{padding: getResponsive('12px 16px', '14px 20px', '16px 24px'), borderBottom: '1px solid #1f2937'}}>
+          <p style={{fontWeight:'bold'}}>
+  {winner.profiles?.full_name || 'Unknown User'}
+</p>
+
+<p style={{color:'#9ca3af'}}>
+  {winner.profiles?.email}
+</p><div style={{
+  background:'linear-gradient(135deg,#111,#1f2937)',
+  padding:'20px',
+  borderRadius:'16px',
+  border:'1px solid #374151',
+  marginBottom:'12px'
+}}>
+  <h3 style={{fontSize:'1.1rem', fontWeight:'bold'}}>
+    🏆 {winner.profiles?.full_name || 'Unknown User'}
+  </h3>
+
+  <p style={{color:'#9ca3af', marginTop:'4px'}}>
+    {winner.profiles?.email}
+  </p>
+
+  <div style={{display:'flex', gap:'8px', flexWrap:'wrap', marginTop:'12px'}}>
+    <span style={{backgroundColor:'#4ade80', color:'#000', padding:'6px 10px', borderRadius:'20px', fontWeight:'bold'}}>
+      {winner.match_type || 'N/A'}
+    </span>
+
+    <span style={{backgroundColor:'#3b82f6', color:'#fff', padding:'6px 10px', borderRadius:'20px', fontWeight:'bold'}}>
+      £{winner.prize_amount || 0}
+    </span>
+
+    <span style={{backgroundColor:'#ec1d1a', color:'#fff', padding:'6px 10px', borderRadius:'20px'}}>
+      {winner.verification_status || 'pending'}
+    </span>
+
+    <span style={{backgroundColor:'#dcf94c', color:'#000', padding:'6px 10px', borderRadius:'20px'}}>
+      {winner.payment_status || 'pending'}
+    </span>
+  </div>
+</div>
         {winner.proof_url && winner.proof_url !== 'pending' && (
   <a
     href={winner.proof_url}
@@ -668,29 +1037,35 @@ const simulateDraw = () => {
 )}
 <div
   style={{
+    backgroundColor:'#1f2937',
     display:'flex',
     gap:'8px',
     flexWrap:'wrap',
     marginTop:'12px'
   }}
 >
-  <button
-    onClick={() => updateWinnerStatus(winner.id,'verification_status','approved')}
+ <button
+  onClick={() =>
+    updateWinnerStatus(
+      winner.id,
+      'verification_status',
+      'approved',
+      winner.profiles?.email
+    )}
     style={{
-      backgroundColor:'#22c55e',
+      backgroundColor:'#4ade80',
       color:'#fff',
       border:'none',
       padding:'8px 14px',
       borderRadius:'8px',
       fontWeight:'bold',
       cursor:'pointer'
-    }}
-  >
-    ✓ Approve
-  </button>
-
+  }}
+>
+  ✓ Approve
+</button>
   <button
-    onClick={() => updateWinnerStatus(winner.id,'verification_status','rejected')}
+    onClick={() => updateWinnerStatus(winner.id,'verification_status','rejected',winner.profiles?.email)}
     style={{
       backgroundColor:'#ef4444',
       color:'#fff',
@@ -705,7 +1080,7 @@ const simulateDraw = () => {
   </button>
 
   <button
-    onClick={() => updateWinnerStatus(winner.id,'payment_status','paid')}
+    onClick={() => updateWinnerStatus(winner.id,'payment_status','paid',winner.profiles?.email)}
     style={{
       backgroundColor:'#3b82f6',
       color:'#fff',

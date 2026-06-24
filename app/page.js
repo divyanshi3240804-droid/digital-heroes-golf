@@ -59,6 +59,114 @@ const getFeaturedCharity = async () => {
           </a>
         </div>
       </section>
+<section style={{
+  padding: getResponsive('32px 12px', '40px 20px', '56px 24px', '64px 48px', '72px 48px', '72px 48px'),
+  background: 'linear-gradient(135deg, #052e16, #000)',
+  textAlign: 'center'
+}}>
+  <p style={{color:'#4ade80', fontWeight:'bold', letterSpacing:'2px', marginBottom:'12px'}}>
+    GOLF WITH PURPOSE
+  </p>
+
+  <h2 style={{
+    fontSize: getResponsive('1.5rem','1.8rem','2.2rem','2.6rem','3rem','3rem'),
+    fontWeight:'bold',
+    marginBottom:'16px'
+  }}>
+    Every round helps fund real causes
+  </h2>
+
+  <p style={{
+    color:'#d1d5db',
+    maxWidth:'700px',
+    margin:'0 auto 28px',
+    fontSize:getResponsive('0.85rem','0.95rem','1rem','1.1rem','1.15rem','1.15rem')
+  }}>
+    Track your scores, support a charity you care about, and enter monthly prize draws — all from one modern dashboard.
+  </p>
+
+  <div style={{
+    display:'grid',
+    gridTemplateColumns:getResponsive('1fr','1fr','repeat(3,1fr)','repeat(3,1fr)','repeat(3,1fr)','repeat(3,1fr)'),
+    gap:'16px',
+    maxWidth:'900px',
+    margin:'0 auto'
+  }}>
+    <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937'}}>
+      <h3 style={{color:'#4ade80', fontSize:'2rem'}}>10%+</h3>
+      <p style={{color:'#9ca3af'}}>Minimum charity contribution</p>
+    </div>
+
+    <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937'}}>
+      <h3 style={{color:'#4ade80', fontSize:'2rem'}}>5</h3>
+      <p style={{color:'#9ca3af'}}>Latest scores used for draws</p>
+    </div>
+
+    <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937'}}>
+      <h3 style={{color:'#4ade80', fontSize:'2rem'}}>Monthly</h3>
+      <p style={{color:'#9ca3af'}}>Prize draw opportunities</p>
+    </div>
+  </div>
+</section>
+
+{/* WHY GlofHeroes? */}
+ <section style={{
+  padding:'64px 24px',
+  backgroundColor:'#000'
+}}>
+  <div style={{maxWidth:'1100px', margin:'0 auto'}}>
+    <h2 style={{
+      textAlign:'center',
+      fontSize:'2rem',
+      fontWeight:'bold',
+      marginBottom:'40px'
+    }}>
+      Why GolfHeroes?
+    </h2>
+
+    <div style={{
+      display:'grid',
+      gridTemplateColumns:'repeat(auto-fit,minmax(250px,1fr))',
+      gap:'20px'
+    }}>
+      <div style={{
+        backgroundColor:'#111',
+        padding:'24px',
+        borderRadius:'16px',
+        border:'1px solid #1f2937'
+      }}>
+        <h3>⛳ Track Performance</h3>
+        <p style={{color:'#9ca3af'}}>
+          Record and manage your latest golf scores in seconds.
+        </p>
+      </div>
+
+      <div style={{
+        backgroundColor:'#111',
+        padding:'24px',
+        borderRadius:'16px',
+        border:'1px solid #1f2937'
+      }}>
+        <h3>❤️ Support Charities</h3>
+        <p style={{color:'#9ca3af'}}>
+          A portion of every subscription supports meaningful causes.
+        </p>
+      </div>
+
+      <div style={{
+        backgroundColor:'#111',
+        padding:'24px',
+        borderRadius:'16px',
+        border:'1px solid #1f2937'
+      }}>
+        <h3>🎰 Win Monthly Prizes</h3>
+        <p style={{color:'#9ca3af'}}>
+          Enter monthly draws based on your score submissions.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
 
       {/* HOW IT WORKS */}
       <section style={{padding: getResponsive('40px 12px', '60px 20px', '80px 24px', '80px 32px', '80px 48px', '80px 48px'), backgroundColor: '#111'}}>
@@ -136,11 +244,214 @@ const getFeaturedCharity = async () => {
         </div>
       </section>
 
+
+      {/* IMPACT STATS */}
+<section style={{
+  display:'grid',
+  gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',
+  gap:'16px',
+  marginTop:'60px'
+}}>
+  {[
+    ['£10+', 'Given to charity per active subscriber'],
+    ['5', 'Charities supported'],
+    ['40+', 'Monthly draws run'],
+    ['100%', 'Purpose-led rewards']
+  ].map((item, i) => (
+    <div key={i} style={{
+      background:'#111',
+      border:'1px solid #1f2937',
+      borderRadius:'18px',
+      padding:'24px',
+      textAlign:'center',
+      transition:'all 0.3s ease'
+    }}>
+      <h3 style={{fontSize:'2rem', color:'#4ade80'}}>{item[0]}</h3>
+      <p style={{color:'#9ca3af'}}>{item[1]}</p>
+    </div>
+  ))}
+</section>
+
+{/* FEATURED CHARITY */}
+<section style={{
+  marginTop:'60px',
+  background:'linear-gradient(135deg,#111,#1f2937)',
+  border:'1px solid #374151',
+  borderRadius:'24px',
+  padding:'32px'
+}}>
+  <p style={{color:'#4ade80', fontWeight:'bold'}}>❤️ Featured Charity</p>
+  <h2 style={{fontSize:'2rem', marginTop:'10px'}}>Support real causes while you play</h2>
+  <p style={{color:'#9ca3af', marginTop:'12px'}}>
+    Every subscription helps fund selected charities, giving your scores a purpose beyond the game.
+  </p>
+  <a href="/signup" 
+  className="hover-btn"
+  style={{
+    display:'inline-block',
+    marginTop:'20px',
+    background:'#4ade80',
+    color:'#000',
+    padding:'12px 20px',
+    borderRadius:'12px',
+    fontWeight:'bold',
+    textDecoration:'none'
+  }}>
+    Start Supporting Charities →
+  </a>
+</section>
+
+{/* HOW IT WORKS */}
+<section style={{
+  marginTop:'60px', leftmargin:'10px',
+}}>
+  <h2 style={{fontSize:'2rem', marginBottom:'24px'}}>How your impact works</h2>
+
+  <div style={{
+    display:'grid',
+    gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',
+    gap:'16px'
+  }}>
+    {[
+      ['1', 'Choose a charity', 'Pick the cause you want your subscription to support.'],
+      ['2', 'Enter your scores', 'Submit your latest 5 Stableford scores each month.'],
+      ['3', 'Win monthly rewards', 'Match draw numbers and win while supporting good causes.']
+    ].map((step) => (
+      <div key={step[0]} style={{
+        background:'#111',
+        border:'1px solid #1f2937',
+        borderRadius:'18px',
+        padding:'24px',
+        transition:'all 0.3s ease'
+      }}>
+        <div style={{
+          background:'#4ade80',
+          color:'#000',
+          width:'36px',
+          height:'36px',
+          borderRadius:'50%',
+          display:'flex',
+          alignItems:'center',
+          justifyContent:'center',
+          fontWeight:'bold',
+          marginBottom:'14px',
+          leftmargin:'10px',
+
+        }}>
+          {step[0]}
+        </div>
+        <h3>{step[1]}</h3>
+        <p style={{color:'#9ca3af', marginTop:'8px'}}>{step[2]}</p>
+      </div>
+    ))}
+  </div>
+</section>
+
       {/* FOOTER */}
-      <footer style={{padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'), borderTop: '1px solid #1f2937', textAlign: 'center', color: '#9ca3af'}}>
-        <div style={{fontSize: getResponsive('1.2rem', '1.3rem', '1.4rem', '1.5rem', '1.5rem', '1.5rem'), fontWeight: 'bold', color: '#4ade80', marginBottom: getResponsive('8px', '12px', '14px', '16px', '16px', '16px')}}>GolfHeroes ⛳</div>
-        <p style={{fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem')}}>© 2026 GolfHeroes. Built for Digital Heroes.</p>
-      </footer>
+      <footer style={{
+  padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'),
+  borderTop: '1px solid #1f2937',
+  backgroundColor:'#000'
+}}>
+  <div style={{
+    maxWidth:'1200px',
+    margin:'0 auto',
+    display:'flex',
+    justifyContent:'space-between',
+    alignItems:'center',
+    flexWrap:'wrap',
+    gap:'20px'
+  }}>
+
+    <div>
+      <div
+      className="hover-card"
+       style={{
+        fontSize:'1.4rem',
+        fontWeight:'bold',
+        color:'#4ade80',
+        marginBottom:'8px'
+      }}>
+        GolfHeroes ⛳
+      </div>
+
+      <p style={{color:'#9ca3af'}}>
+        Play Golf. Support Charity. Win Prizes.
+      </p>
+    </div>
+
+    <div style={{
+  display:'flex',
+  gap:'12px',
+  flexWrap:'wrap'
+}}>
+  <a
+    href="/"
+    style={{
+      backgroundColor:'#4ade80',
+      border:'1px solid #1f2937',
+      color:'#000',
+      padding:'10px 16px',
+      borderRadius:'10px',
+      textDecoration:'none',
+      fontWeight:'600'
+    }}
+  >
+    Home
+  </a>
+
+  <a
+    href="/charities"
+    style={{
+      backgroundColor:'#4ade80',
+      border:'1px solid #1f2937',
+      color:'#000',
+      padding:'10px 16px',
+      borderRadius:'10px',
+      textDecoration:'none',
+      fontWeight:'600'
+    }}
+  >
+    ❤️ Charities
+  </a>
+
+  <a
+    href="/how-it-works"
+    style={{
+      backgroundColor:'#4ade80',
+      border:'1px solid #1f2937',
+      color:'#000',
+      padding:'10px 16px',
+      borderRadius:'10px',
+      textDecoration:'none',
+      fontWeight:'600'
+    }}
+  >
+    ⚙️ How It Works
+  </a>
+
+  <a
+    href="/signup"
+    style={{
+      backgroundColor:'#4ade80',
+      color:'#000',
+      padding:'10px 16px',
+      borderRadius:'10px',
+      textDecoration:'none',
+      fontWeight:'bold'
+    }}
+  >
+    🚀 Join Now
+  </a>
+</div>
+    <div>
+      <p style={{color:'#9ca3af'}}>
+        © 2026 GolfHeroes
+      </p>
+    </div>
+
+  </div>
+</footer>
 
     </main>
   )

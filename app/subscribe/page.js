@@ -82,7 +82,7 @@ export default function Subscribe() {
           {/* MONTHLY */}
           <div style={{backgroundColor: '#4ade80', padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'), borderRadius: '20px', border: '1px solid #1f2937'}}>
             <h3 style={{fontSize: getResponsive('1.1rem', '1.2rem', '1.3rem', '1.4rem', '1.5rem', '1.5rem'), fontWeight: 'bold', marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>Monthly</h3>
-            <div style={{fontSize: getResponsive('2rem', '2.2rem', '2.4rem', '2.6rem', '3rem', '3rem'), fontWeight: 'bold', color: '#4ade80', marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>
+            <div style={{fontSize: getResponsive('2rem', '2.2rem', '2.4rem', '2.6rem', '3rem', '3rem'), fontWeight: 'bold', color: '#000', marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>
               £9.99
               <span style={{fontSize: getResponsive('0.75rem', '0.8rem', '0.85rem', '0.9rem', '1rem', '1rem'), color: '#9ca3af'}}>/mo</span>
             </div>

@@ -14,8 +14,12 @@ export default function Dashboard() {
   const [editScore, setEditScore] = useState('')
 const [editDate, setEditDate] = useState('')
 const [draws, setDraws] = useState([])
+const [currentJackpot, setCurrentJackpot] = useState(1000)
 const [winnings, setWinnings] = useState([])
+const [editingProfile, setEditingProfile] = useState(false)
 const [proofFile, setProofFile] = useState(null)
+const [editName, setEditName] = useState('')
+
 
   const [profile, setProfile] = useState(null)
   const { getResponsive } = useResponsive()
@@ -95,11 +99,23 @@ const getProfile = async (userId) => {
     .single()
 
   if (!error && data) {
-    console.log(data)
-    setProfile(data)
-  }
-}
+  setProfile(data)
+  if (
+  data.subscription_end_date &&
+  new Date(data.subscription_end_date) < new Date()
+) {
+  await supabase
+    .from('profiles')
+    .update({
+      subscription_status: 'expired'
+    })
+    .eq('id', userId)
 
+  data.subscription_status = 'expired'
+}
+  setEditName(data.full_name || '')
+}
+}
 const subscribePlan = async (plan) => {
   try {
     setMessage('Redirecting to payment...')
@@ -131,15 +147,25 @@ const subscribePlan = async (plan) => {
 
 
 
+
 const getDraws = async () => {
+ 
   const { data } = await supabase
     .from('draws')
     .select('*')
     .order('created_at', { ascending: false })
 
-  if (data) setDraws(data)
-}
+  if (data) {
+    setDraws(data)
 
+    if (data.length > 0) {
+      setCurrentJackpot(
+        (data[0].jackpot_amount || 1000) +
+        (data[0].rollover_amount || 0)
+      )
+    }
+  }
+}
 const getWinnings = async (userId) => {
   const { data } = await supabase
     .from('winners')
@@ -150,6 +176,10 @@ const getWinnings = async (userId) => {
 }
 
   const addScore = async () => {
+    if (profile?.subscription_status !== 'active') {
+  setMessage('Active subscription required to add scores.')
+  return
+}
 if (!newScore || !newDate) {
 setMessage('Please enter both score and date!')
 return
@@ -182,6 +212,22 @@ setMessage(error.message)
 setMessage('Score added successfully!')
 setNewScore('')
 setNewDate('')
+const { data: allScores } = await supabase
+  .from('scores')
+  .select('*')
+  .eq('user_id', user.id)
+  .order('date', { ascending: false })
+
+if (allScores && allScores.length > 5) {
+  const oldScores = allScores.slice(5)
+
+  for (const oldScore of oldScores) {
+    await supabase
+      .from('scores')
+      .delete()
+      .eq('id', oldScore.id)
+  }
+}
 getScores(user.id)
 }
 }
@@ -232,6 +278,10 @@ getScores(user.id)
 }
 }
 const uploadWinnerProof = async () => {
+if (profile?.subscription_status !== 'active') {
+  setMessage('Active subscription required.')
+  return
+}
   if (!proofFile) {
     setMessage('Please choose a proof file first.')
     return
@@ -296,6 +346,21 @@ setTimeout(() => {
 }, 3000)
 }
 
+const updateProfile = async () => {
+  const { error } = await supabase
+    .from('profiles')
+    .update({
+      full_name: editName
+    })
+    .eq('id', user.id)
+
+  if (error) {
+    setMessage(error.message)
+  } else {
+    setMessage('Profile updated successfully!')
+    getProfile(user.id)
+  }
+}
 
   const handleLogout = async () => {
     await supabase.auth.signOut()
@@ -327,25 +392,179 @@ setTimeout(() => {
         {/* WELCOME */}
         <div style={{marginBottom: getResponsive('24px', '28px', '32px', '36px', '40px', '40px')}}>
           <h1 style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.7rem', '1.8rem', '2rem', '2rem'), fontWeight: 'bold'}}>Your Dashboard 🏌️</h1>
+          <div style={{
+  background:'linear-gradient(135deg,#4ade80,#16a34a)',
+  color:'#000',
+  padding:'20px',
+  borderRadius:'16px',
+  marginTop:'20px',
+  marginBottom:'24px'
+}}>
+  <h2 style={{marginBottom:'8px'}}>
+    Welcome Back Champion 🏆
+  </h2>
+
+  <p>
+    Track scores, support your charity and compete in monthly prize draws.
+  </p>
+</div>
           <p style={{color: '#9ca3af', marginTop: getResponsive('4px', '6px', '8px', '8px', '8px', '8px'), fontSize: getResponsive('0.85rem', '0.9rem', '0.95rem', '1rem', '1rem', '1rem')}}>Track your scores and manage your account</p>
         </div>
 
+
+<div style={{
+  backgroundColor:'#111',
+  padding:'24px',
+  borderRadius:'16px',
+  border:'1px solid #1f2937',
+  marginBottom:'24px'
+}}>
+  <h2 style={{
+    fontSize:'1.1rem',
+    fontWeight:'bold',
+    marginBottom:'12px'
+  }}>
+    ⚙️ Profile Settings
+  </h2>
+
+  {!editingProfile ? (
+    <>
+      <p style={{
+        color:'#9ca3af',
+        marginBottom:'12px'
+      }}>
+        Full Name: <span style={{color:'#fff'}}>
+          {profile?.full_name || 'Not set'}
+        </span>
+      </p>
+
+      <button
+        onClick={() => setEditingProfile(true)}
+        style={{
+          backgroundColor:'#3b82f6',
+          color:'#fff',
+          border:'none',
+          padding:'10px 16px',
+          borderRadius:'8px',
+          cursor:'pointer'
+        }}
+      >
+        Edit Profile
+      </button>
+    </>
+  ) : (
+    <>
+      <input
+        type="text"
+        value={editName}
+        onChange={(e) => setEditName(e.target.value)}
+        placeholder="Full Name"
+        style={{
+          width:'100%',
+          padding:'12px',
+          backgroundColor:'#000',
+          border:'1px solid #1f2937',
+          borderRadius:'8px',
+          color:'#fff',
+          marginBottom:'12px',
+          boxSizing:'border-box'
+        }}
+      />
+
+      <div style={{
+        display:'flex',
+        gap:'10px',
+        flexWrap:'wrap'
+      }}>
+        <button
+          onClick={async () => {
+            await updateProfile()
+            setEditingProfile(false)
+          }}
+          style={{
+            backgroundColor:'#4ade80',
+            color:'#000',
+            border:'none',
+            padding:'10px 16px',
+            borderRadius:'8px',
+            fontWeight:'bold',
+            cursor:'pointer'
+          }}
+        >
+          Save Changes
+        </button>
+
+        <button
+          onClick={() => setEditingProfile(false)}
+          style={{
+            backgroundColor:'#6b7280',
+            color:'#fff',
+            border:'none',
+            padding:'10px 16px',
+            borderRadius:'8px',
+            cursor:'pointer'
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </>
+  )}
+</div>
+ {message && (
+  <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
+    {message}
+  </div>
+)}
         {/* STATS */}
         <div style={{display: 'grid', gridTemplateColumns: getResponsive('1fr', '1fr', '1fr', '1fr', 'repeat(3, 1fr)', 'repeat(3, 1fr)'), gap: getResponsive('12px', '14px', '16px', '20px', '24px', '24px'), marginBottom: getResponsive('24px', '28px', '32px', '36px', '40px', '40px')}}>
-          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937',boxShadow: '0 0 20px rgba(74, 222, 128, 0.08)',
+transition: 'all 0.3s ease'}}>
             <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>TOTAL SCORES</p>
             <p style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.8rem', '1.9rem', '2rem', '2rem'), fontWeight: 'bold', color: '#4ade80'}}>{scores.length}</p>
           </div>
-          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937',boxShadow: '0 0 20px rgba(74, 222, 128, 0.08)',
+transition: 'all 0.3s ease'}}>
             <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>BEST SCORE</p>
             <p style={{fontSize: getResponsive('1.5rem', '1.6rem', '1.8rem', '1.9rem', '2rem', '2rem'), fontWeight: 'bold', color: '#4ade80'}}>{scores.length > 0 ? Math.max(...scores.map(s => s.score)) : '-'}</p>
           </div>
-          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
+          <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937',boxShadow: '0 0 20px rgba(74, 222, 128, 0.08)',
+transition: 'all 0.3s ease'}}>
             <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: getResponsive('4px', '6px', '8px', '8px', '8px', '8px')}}>SUBSCRIPTION</p>
+            <div style={{
+  backgroundColor: '#111',
+  padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'),
+  borderRadius: '16px',
+  border: '1px solid #1f2937'
+}}>
+   <p style={{
+    fontWeight:'bold',
+    letterSpacing:'2px'
+  }}>
+    CURRENT JACKPOT
+  </p>
+
+  <p style={{
+    fontSize: getResponsive('1.5rem', '1.6rem', '1.8rem', '1.9rem', '2rem', '2rem'),
+    fontWeight: 'bold',
+    color: '#4ade80'
+  }}>
+    £{currentJackpot}
+  </p>
+</div>
             <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#f59e0b'}}>
+<span style={{
+  color:
+    profile?.subscription_status === 'active'
+      ? '#4ade80'
+      : profile?.subscription_status === 'expired'
+      ? '#ef4444'
+      : '#f59e0b'
+}}>
   {profile?.subscription_status
-  ? profile.subscription_status.charAt(0).toUpperCase() + profile.subscription_status.slice(1)
-  : 'Inactive'}
+    ? profile.subscription_status.charAt(0).toUpperCase() + profile.subscription_status.slice(1)
+    : 'Inactive'}
+</span>
 </p>
 
 <p style={{
@@ -357,6 +576,34 @@ setTimeout(() => {
     ? `Renews: ${new Date(profile.subscription_end_date).toLocaleDateString()}`
     : ''}
 </p>
+{profile?.subscription_status === 'active' && (
+  <button
+    onClick={async () => {
+      const { error } = await supabase
+        .from('profiles')
+        .update({
+          subscription_status: 'cancelled'
+        })
+        .eq('id', user.id)
+
+      if (!error) {
+        setMessage('Subscription cancelled.')
+        getProfile(user.id)
+      }
+    }}
+    style={{
+      backgroundColor:'#ef4444',
+      color:'#fff',
+      border:'none',
+      padding:'8px 12px',
+      borderRadius:'8px',
+      marginTop:'10px',
+      cursor:'pointer'
+    }}
+  >
+    Cancel Subscription
+  </button>
+)}
 <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
   <p style={{color: '#9ca3af', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem'), marginBottom: '8px'}}>SELECTED CHARITY</p>
   <p style={{fontSize: getResponsive('0.95rem', '1rem', '1.05rem', '1.1rem', '1.2rem', '1.2rem'), fontWeight: 'bold', color: '#4ade80'}}>
@@ -438,33 +685,55 @@ setTimeout(() => {
 
           </div>
         </div>
-   {true && (
-  <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937', marginBottom:'24px'}}>
-    <h2 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'12px'}}>
-      Upload Winner Proof
-    </h2>
+   {profile?.subscription_status === 'active' && (
+ <div style={{
+  background:'linear-gradient(135deg,#111,#1f2937)',
+  padding:'24px',
+  borderRadius:'20px',
+  border:'1px solid #374151',
+  marginBottom:'24px'
+}}>
+  <h2 style={{fontSize:'1.3rem', fontWeight:'bold', marginBottom:'8px'}}>
+    📤 Upload Verification Proof
+  </h2>
 
-    <input
-  id="proofFileInput"
-  type="file"
-  accept="image/*,.pdf"
-  onChange={(e) => setProofFile(e.target.files[0])}
-/>
-    <button
-      onClick={uploadWinnerProof}
-      style={{
-        backgroundColor:'#4ade80',
-        color:'#000',
-        border:'none',
-        padding:'10px 16px',
-        borderRadius:'8px',
-        fontWeight:'bold',
-        cursor:'pointer'
-      }}
-    >
-      Upload Proof
-    </button>
-  </div>
+  <p style={{color:'#9ca3af', marginBottom:'16px'}}>
+    Upload a screenshot or PDF to verify your winning score.
+  </p>
+
+  <input
+    id="proofFileInput"
+    type="file"
+    accept="image/*,.pdf"
+    onChange={(e) => setProofFile(e.target.files[0])}
+    style={{
+      display:'block',
+      marginBottom:'16px',
+      color:'#fff',
+      backgroundColor:'#000',
+      padding:'12px',
+      borderRadius:'10px',
+      border:'1px solid #374151',
+      width:'100%',
+      boxSizing:'border-box'
+    }}
+  />
+
+  <button
+    onClick={uploadWinnerProof}
+    style={{
+      backgroundColor:'#4ade80',
+      color:'#000',
+      border:'none',
+      padding:'12px 18px',
+      borderRadius:'10px',
+      fontWeight:'bold',
+      cursor:'pointer'
+    }}
+  >
+    Upload Proof →
+  </button>
+</div>
 )}
 {profile?.subscription_status !== 'active' && (
   <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937', marginBottom:'24px'}}>
@@ -493,9 +762,91 @@ setTimeout(() => {
     </div>
   </div>
 )}
-      {message && (
-  <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
-    {message}
+     
+{draws.length > 0 && (
+  <div style={{
+  background:'linear-gradient(135deg,#111,#1f2937)',
+  padding:'24px',
+  borderRadius:'20px',
+  border:'1px solid #4ade80',
+  marginBottom:'24px'
+}}>
+    <h2 style={{
+  fontSize:'1.3rem',
+  fontWeight:'bold',
+  marginBottom:'12px',
+  color:'#4ade80'
+}}>
+  🎰 Official Draw Results
+</h2>
+
+    <p style={{color:'#9ca3af', marginBottom:'12px'}}>
+      {new Date(draws[0].draw_date).toLocaleDateString()}
+    </p>
+
+    <div
+      style={{
+        display:'flex',
+        gap:'8px',
+        flexWrap:'wrap'
+      }}
+    >
+      <h2 style={{
+        backgroundColor:'#3b82f6',
+  color:'#fff',
+  marginBottom:'12px',
+  marginTop:'12px',
+  fontStyle:'italic',
+  fontWeight:'bold',
+
+}}>
+  
+  "Official Winning Numbers...            "
+</h2>
+
+
+
+      {draws[0].winning_numbers.map((num, i) => (
+        <div
+          key={i}
+          style={{
+  backgroundColor:'#ef4444',
+  color:'#fff',
+  width:'48px',
+  height:'48px',
+  borderRadius:'50%',
+  display:'flex',
+  alignItems:'center',
+  justifyContent:'center',
+  fontWeight:'bold',
+  fontSize:'1rem'
+}}
+        >
+          {num}
+        </div>
+      ))}
+    </div>
+
+    <p
+      style={{
+        color:'#9ca3af',
+        marginTop:'12px'
+      }}
+    >
+      Status: {draws[0].status}
+    </p>
+  </div>
+)}
+{profile?.subscription_status !== 'active' && (
+  <div style={{
+    backgroundColor:'#451a03',
+    border:'1px solid #f59e0b',
+    color:'#fef3c7',
+    padding:'16px',
+    borderRadius:'12px',
+    marginBottom:'20px'
+  }}>
+    ⚠️ Active subscription required to add scores, enter draws, and upload winner proof.
   </div>
 )}
         {/* ADD SCORE */}

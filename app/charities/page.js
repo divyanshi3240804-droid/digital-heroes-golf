@@ -7,6 +7,7 @@ export default function Charities() {
   const [charities, setCharities] = useState([])
   const [loading, setLoading] = useState(true)
   const [searchTerm, setSearchTerm] = useState('')
+  const [categoryFilter, setCategoryFilter] = useState('all')
   const { screenSize, getResponsive } = useResponsive()
 
   useEffect(() => {
@@ -18,9 +19,19 @@ export default function Charities() {
     if (data) setCharities(data)
     setLoading(false)
   }
-const filteredCharities = charities.filter((charity) =>
-  charity.name.toLowerCase().includes(searchTerm.toLowerCase())
-)
+const filteredCharities = charities.filter((charity) => {
+  const matchesSearch =
+    charity.name.toLowerCase().includes(
+      searchTerm.toLowerCase()
+    )
+
+  const matchesCategory =
+    categoryFilter === 'all' ||
+    charity.category === categoryFilter
+
+  return matchesSearch && matchesCategory
+})
+  
   return (
     <main style={{minHeight: '100vh', backgroundColor: '#000', color: '#fff', fontFamily: 'sans-serif'}}>
       
@@ -59,6 +70,25 @@ const filteredCharities = charities.filter((charity) =>
   }}
 />
 
+<select
+  value={categoryFilter}
+  onChange={(e) => setCategoryFilter(e.target.value)}
+  style={{
+    width:'100%',
+    padding:'12px',
+    marginBottom:'20px',
+    borderRadius:'10px',
+    background:'#111',
+    color:'#fff'
+  }}
+>
+  <option value="all">All Categories</option>
+  <option value="children">Children</option>
+  <option value="health">Health</option>
+  <option value="education">Education</option>
+  <option value="animals">Animals</option>
+</select>
+
         {loading ? (
           <p style={{textAlign: 'center', color: '#9ca3af', fontSize: getResponsive('0.8rem', '0.9rem', '1rem', '1rem', '1rem', '1rem')}}>Loading charities...</p>
         ) : charities.length === 0 ? (
@@ -87,18 +117,45 @@ const filteredCharities = charities.filter((charity) =>
         color: 'inherit'
       }}
     >
-      <div style={{
-        backgroundColor: '#4ade80',
-        padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'),
-        textAlign: 'center',
-        fontSize: getResponsive('1.8rem', '2.2rem', '2.6rem', '3rem', '3rem', '3rem')
-      }}>
-        ❤️
-      </div>
+      {charity.image_url ? (
+  <img
+    src={charity.image_url}
+    alt={charity.name}
+    style={{
+      width:'100%',
+      height:'200px',
+      objectFit:'cover'
+    }}
+  />
+) : (
+  <div
+    style={{
+      backgroundColor:'#4ade80',
+      padding:'40px',
+      textAlign:'center',
+      fontSize:'3rem'
+    }}
+  >
+    ❤️
+  </div>
+)}
 
       <div style={{padding: getResponsive('12px', '14px', '16px', '18px', '24px', '24px')}}>
-        <h3>{charity.name}</h3>
-        <p>{charity.description}</p>
+       <h3>{charity.name}</h3>
+
+<p>{charity.description}</p>
+
+{charity.upcoming_event && (
+  <p
+    style={{
+      marginTop:'10px',
+      color:'#4ade80',
+      fontWeight:'bold'
+    }}
+  >
+    ⛳ Upcoming Event: {charity.upcoming_event}
+  </p>
+)}
       </div>
     </a>
 
