@@ -12,7 +12,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('')
   const [charities, setCharities] = useState([])
   const [selectedCharity, setSelectedCharity] = useState('')
-  const [charityPercentage, setCharityPercentage] = useState(10)
+  const [charityPercentage, setCharityPercentage] = useState(10)  
 
   const { getResponsive } = useResponsive()
   useEffect(() => {
@@ -91,6 +91,7 @@ const handleSignup = async () => {
 
   setLoading(false)
 }
+
 await fetch('/api/send-email', {
   method: 'POST',
   headers: {'Content-Type': 'application/json'},
