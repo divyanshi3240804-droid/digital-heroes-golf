@@ -12,11 +12,21 @@ export default function Login() {
 
   const handleLogin = async () => {
     setLoading(true)
-    const { error } = await supabase.auth.signInWithPassword({ email, password })
+    const { data,error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
       setMessage(error.message)
     } else {
-      window.location.href = '/dashboard'
+    const { data: profile } = await supabase
+  .from('profiles')
+  .select('role')
+  .eq('id', data.user.id)
+  .single()
+
+if (profile?.role === 'admin') {
+  window.location.href = '/admin'
+} else {
+  window.location.href = '/dashboard'
+}
     }
     setLoading(false)
   }
@@ -66,6 +76,7 @@ export default function Login() {
         >
           {loading ? 'Logging in...' : 'Login →'}
         </button>
+        
 
         <p style={{textAlign: 'center', marginTop: getResponsive('16px', '18px', '20px', '22px', '24px', '24px'), color: '#9ca3af', fontSize: getResponsive('0.8rem', '0.85rem', '0.9rem', '0.95rem', '1rem', '1rem')}}>
           Don't have an account? <a href="/signup" style={{color: '#4ade80', textDecoration: 'none', fontWeight: 'bold'}}>Sign Up</a>
