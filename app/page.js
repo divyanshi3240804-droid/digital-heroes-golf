@@ -248,9 +248,17 @@ const getFeaturedCharity = async () => {
       {/* IMPACT STATS */}
 <section style={{
   display:'grid',
-  gridTemplateColumns:'repeat(auto-fit, minmax(180px, 1fr))',
-  gap:'16px',
-  marginTop:'60px'
+  gridTemplateColumns: getResponsive(
+  '1fr',
+  '1fr',
+  '1fr',
+  'repeat(2, 1fr)',
+  'repeat(4, 1fr)',
+  'repeat(4, 1fr)'
+),
+  gap:getResponsive('12px','12px','14px','16px','16px','16px'),
+  marginTop: getResponsive('32px','36px','44px','50px','60px','60px')
+
 }}>
   {[
     ['£10+', 'Given to charity per active subscriber'],
@@ -262,11 +270,12 @@ const getFeaturedCharity = async () => {
       background:'#111',
       border:'1px solid #1f2937',
       borderRadius:'18px',
-      padding:'24px',
+      padding: getResponsive('32px','36px','44px','50px','60px','60px')
+,
       textAlign:'center',
       transition:'all 0.3s ease'
     }}>
-      <h3 style={{fontSize:'2rem', color:'#4ade80'}}>{item[0]}</h3>
+      <h3 style={{fontSize: getResponsive('1.4rem','1.5rem','1.7rem','1.8rem','2rem','2rem'), color:'#4ade80'}}>{item[0]}</h3>
       <p style={{color:'#9ca3af'}}>{item[1]}</p>
     </div>
   ))}
@@ -274,25 +283,25 @@ const getFeaturedCharity = async () => {
 
 {/* FEATURED CHARITY */}
 <section style={{
-  marginTop:'60px',
+  marginTop: getResponsive('32px','36px','44px','50px','60px','60px'),
   background:'linear-gradient(135deg,#111,#1f2937)',
   border:'1px solid #374151',
   borderRadius:'24px',
-  padding:'32px'
+  padding:getResponsive('20px','22px','26px','28px','32px','32px')
 }}>
   <p style={{color:'#4ade80', fontWeight:'bold'}}>❤️ Featured Charity</p>
-  <h2 style={{fontSize:'2rem', marginTop:'10px'}}>Support real causes while you play</h2>
-  <p style={{color:'#9ca3af', marginTop:'12px'}}>
+  <h2 style={{fontSize:getResponsive('1.4rem','1.5rem','1.7rem','1.8rem','2rem','2rem'), marginTop: getResponsive('32px','36px','44px','50px','60px','60px')}}>Support real causes while you play</h2>
+  <p style={{color:'#9ca3af', marginTop: getResponsive('32px','36px','44px','50px','60px','60px')}}>
     Every subscription helps fund selected charities, giving your scores a purpose beyond the game.
   </p>
   <a href="/signup" 
   className="hover-btn"
   style={{
     display:'inline-block',
-    marginTop:'20px',
+    marginTop: getResponsive('32px','36px','44px','50px','60px','60px'),
     background:'#4ade80',
     color:'#000',
-    padding:'12px 20px',
+    padding:getResponsive('20px','22px','26px','28px','32px','32px'),
     borderRadius:'12px',
     fontWeight:'bold',
     textDecoration:'none'
@@ -303,14 +312,22 @@ const getFeaturedCharity = async () => {
 
 {/* HOW IT WORKS */}
 <section style={{
-  marginTop:'60px', leftmargin:'10px',
+  marginTop: getResponsive('32px','36px','44px','50px','60px','60px'), leftmargin:'10px',
 }}>
-  <h2 style={{fontSize:'2rem', marginBottom:'24px'}}>How your impact works</h2>
+  <h2 style={{fontSize:getResponsive('1.4rem','1.5rem','1.7rem','1.8rem','2rem','2rem'), marginBottom: getResponsive('32px','36px','44px','50px','60px','60px'), }}>How your impact works</h2>
 
   <div style={{
     display:'grid',
-    gridTemplateColumns:'repeat(auto-fit, minmax(220px, 1fr))',
-    gap:'16px'
+   gridTemplateColumns: getResponsive(
+  '1fr',
+  '1fr',
+  '1fr',
+  'repeat(2, 1fr)',
+  'repeat(4, 1fr)',
+  'repeat(4, 1fr)'
+),
+    gap:getResponsive('12px','12px','14px','16px','16px','16px'),
+    
   }}>
     {[
       ['1', 'Choose a charity', 'Pick the cause you want your subscription to support.'],
@@ -321,7 +338,7 @@ const getFeaturedCharity = async () => {
         background:'#111',
         border:'1px solid #1f2937',
         borderRadius:'18px',
-        padding:'24px',
+        padding:getResponsive('20px','22px','26px','28px','32px','32px'),
         transition:'all 0.3s ease'
       }}>
         <div style={{
@@ -347,7 +364,7 @@ const getFeaturedCharity = async () => {
   </div>
 </section>
 
-      {/* FOOTER */}
+      {/* FOOTER */}'
       <footer style={{
   padding: getResponsive('20px', '24px', '28px', '32px', '40px', '40px'),
   borderTop: '1px solid #1f2937',
@@ -360,14 +377,14 @@ const getFeaturedCharity = async () => {
     justifyContent:'space-between',
     alignItems:'center',
     flexWrap:'wrap',
-    gap:'20px'
+    gap:getResponsive('12px','12px','14px','16px','16px','16px')
   }}>
 
     <div>
       <div
       className="hover-card"
        style={{
-        fontSize:'1.4rem',
+        fontSize:getResponsive('1.4rem','1.5rem','1.7rem','1.8rem','2rem','2rem'),
         fontWeight:'bold',
         color:'#4ade80',
         marginBottom:'8px'
@@ -382,7 +399,7 @@ const getFeaturedCharity = async () => {
 
     <div style={{
   display:'flex',
-  gap:'12px',
+  gap:getResponsive('12px','12px','14px','16px','16px','16px'),
   flexWrap:'wrap'
 }}>
   <a

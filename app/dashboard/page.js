@@ -19,8 +19,10 @@ const [winnings, setWinnings] = useState([])
 const [editingProfile, setEditingProfile] = useState(false)
 const [proofFile, setProofFile] = useState(null)
 const [editName, setEditName] = useState('')
-
-
+const [scoreMessage, setScoreMessage] = useState('')
+const [proofMessage, setProofMessage] = useState('')
+const [fileMessage, setFileMessage] = useState('')
+const [deleteMessage, setDeleteMessage] = useState('')
   const [profile, setProfile] = useState(null)
   const { getResponsive } = useResponsive()
 
@@ -177,16 +179,16 @@ const getWinnings = async (userId) => {
 
   const addScore = async () => {
     if (profile?.subscription_status !== 'active') {
-  setMessage('Active subscription required to add scores.')
+  setScoreMessage('Active subscription required to add scores.')
   return
 }
 if (!newScore || !newDate) {
-setMessage('Please enter both score and date!')
+setScoreMessage('Please enter both score and date!')
 return
 }
 
 if (newScore < 1 || newScore > 45) {
-setMessage('Score must be between 1 and 45!')
+setScoreMessage('Score must be between 1 and 45!')
 return
 }
 
@@ -202,14 +204,14 @@ date: newDate
 
 if (error) {
 if (error.message.includes('scores_date_key')) {
-setMessage(
+setScoreMessage(
 'A score already exists for this date. Please edit the existing score instead.'
 )
 } else {
 setMessage(error.message)
 }
 } else {
-setMessage('Score added successfully!')
+setScoreMessage('Score added successfully!')
 setNewScore('')
 setNewDate('')
 const { data: allScores } = await supabase
@@ -240,18 +242,18 @@ const { error } = await supabase
 if (error) {
 setMessage(error.message)
 } else {
-setMessage('Score deleted successfully!')
+setDeleteMessage('Score deleted successfully!')
 getScores(user.id)
 }
 }
 const updateScore = async (scoreId) => {
 if (!editScore || !editDate) {
-setMessage('Please enter both score and date!')
+setScoreMessage('Please enter both score and date!')
 return
 }
 
 if (editScore < 1 || editScore > 45) {
-setMessage('Score must be between 1 and 45!')
+setScoreMessage('Score must be between 1 and 45!')
 return
 }
 
@@ -265,12 +267,12 @@ date: editDate
 
 if (error) {
 if (error.message.includes('scores_date_key')) {
-setMessage('A score already exists for this date.')
+setScoreMessage('A score already exists for this date.')
 } else {
 setMessage(error.message)
 }
 } else {
-setMessage('Score updated successfully!')
+setScoreMessage('Score updated successfully!')
 setEditingId(null)
 setEditScore('')
 setEditDate('')
@@ -279,16 +281,16 @@ getScores(user.id)
 }
 const uploadWinnerProof = async () => {
 if (profile?.subscription_status !== 'active') {
-  setMessage('Active subscription required.')
+  setProofMessage('Active subscription required.')
   return
 }
   if (!proofFile) {
-    setMessage('Please choose a proof file first.')
+    setFileMessage('Please choose a proof file first.')
     return
   }
 
   if (winnings.length === 0) {
-    setMessage('No winnings found for proof upload.')
+    setProofMessage('No winnings found for proof upload.')
     return
   }
 
@@ -337,7 +339,7 @@ const filePath = `${user.id}/${winnerId}-${Date.now()}-${safeFileName}`
     return
   }
 
-  setMessage('Winner proof uploaded successfully!')
+  setProofMessage('Winner proof uploaded successfully!')
 setProofFile(null)
 getWinnings(user.id)
 document.getElementById('proofFileInput').value = ''
@@ -511,11 +513,7 @@ const updateProfile = async () => {
     </>
   )}
 </div>
- {message && (
-  <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
-    {message}
-  </div>
-)}
+ 
         {/* STATS */}
         <div style={{display: 'grid', gridTemplateColumns: getResponsive('1fr', '1fr', '1fr', '1fr', 'repeat(3, 1fr)', 'repeat(3, 1fr)'), gap: getResponsive('12px', '14px', '16px', '20px', '24px', '24px'), marginBottom: getResponsive('24px', '28px', '32px', '36px', '40px', '40px')}}>
           <div style={{backgroundColor: '#111', padding: getResponsive('14px', '16px', '18px', '20px', '24px', '24px'), borderRadius: '16px', border: '1px solid #1f2937',boxShadow: '0 0 20px rgba(74, 222, 128, 0.08)',
@@ -735,6 +733,12 @@ transition: 'all 0.3s ease'}}>
   </button>
 </div>
 )}
+ {proofMessage && (
+  <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
+    {proofMessage}
+  </div>
+)}
+
 {profile?.subscription_status !== 'active' && (
   <div style={{backgroundColor:'#111', padding:'24px', borderRadius:'16px', border:'1px solid #1f2937', marginBottom:'24px'}}>
     <h2 style={{fontSize:'1.2rem', fontWeight:'bold', marginBottom:'8px'}}>
@@ -886,6 +890,11 @@ transition: 'all 0.3s ease'}}>
             Add Score →
           </button>
         </div>
+        {scoreMessage && (
+  <div style={{backgroundColor: '#1f2937', padding: getResponsive('8px', '9px', '10px', '11px', '12px', '12px'), borderRadius: '8px', marginBottom: getResponsive('10px', '12px', '14px', '16px', '16px', '16px'), color: '#4ade80', fontSize: getResponsive('0.7rem', '0.75rem', '0.8rem', '0.85rem', '0.85rem', '0.85rem')}}>
+    {scoreMessage}
+  </div>
+)}
 
         {/* SCORES LIST */}
         <div style={{backgroundColor: '#111', padding: getResponsive('18px', '20px', '24px', '28px', '32px', '32px'), borderRadius: '16px', border: '1px solid #1f2937'}}>
